@@ -13,6 +13,9 @@ import { SplashScene } from './scenes/SplashScene';
 import { MapScene } from './scenes/MapScene';
 import { GameScene } from './scenes/GameScene';
 import { ShopScene } from './scenes/ShopScene';
+import pkg from '../package.json';
+
+const APP_VERSION = pkg.version;
 
 // ─── Canvas Setup ───
 const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
@@ -171,6 +174,13 @@ function gameLoop(timestamp: number): void {
     // Cheat overlay on top of everything
     cheatMenu.update(dt);
     cheatMenu.render(ctx);
+
+    // Render Version number at the top of the game
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.font = '10px "Segoe UI", Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(`v${APP_VERSION}`, canvas.width / 2, 4);
 
     requestAnimationFrame(gameLoop);
 }
