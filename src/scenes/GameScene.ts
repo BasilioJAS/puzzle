@@ -55,6 +55,7 @@ export class GameScene implements Scene {
     // Fit Force mode
     private fitForceMode: boolean = false;
     private fitForceLabel: Label | null = null;
+    private usedFitForce: boolean = false;
 
     // Hint
     private hintPiece: PuzzlePiece | null = null;
@@ -142,6 +143,7 @@ export class GameScene implements Scene {
         this.slowTimeRemaining = 0;
         this.fitForceMode = false;
         this.fitForceLabel = null;
+        this.usedFitForce = false;
         this.celebrating = false;
 
         if (!this.level) return;
@@ -463,6 +465,7 @@ export class GameScene implements Scene {
     }
 
     private calculateStars(): number {
+        if (this.usedFitForce) return 1;
         const config = this.configLoader.getConfig();
         const settings = config.settings;
         const pctRemaining = this.timeRemaining / this.level!.timeLimit;
@@ -774,7 +777,27 @@ export class GameScene implements Scene {
             ctx.globalAlpha = this.celebrationAlpha;
             ctx.save();
             ctx.shadowColor = 'rgba(0,0,0,0.3)'; ctx.shadowBlur = 20; ctx.shadowOffsetY = 10;
-            ctx.drawImage(image, (w - drawW) / 2, (h - drawH) / 2, drawW, drawH);
+
+            // If the user used fitForce, the puzzle might be visually incorrect because
+            // logical target pieces were swapped. Thus we draw the placed pieces instead
+            // of the full original image.
+            if (this.usedFitForce) {
+                const startX = (w - drawW) / 2;
+                const startY = (h - drawH) / 2;
+                const pieceW = drawW / this.level!.cols;
+                const pieceH = drawH / this.level!.rows;
+
+                for (const piece of this.pieces) {
+                    const c = piece.col;
+                    const r = piece.row;
+                    const px = startX + c * pieceW;
+                    const py = startY + r * pieceH;
+                    ctx.drawImage(image, piece.sx, piece.sy, piece.sw, piece.sh, px, py, pieceW + 0.5, pieceH + 0.5);
+                }
+            } else {
+                ctx.drawImage(image, (w - drawW) / 2, (h - drawH) / 2, drawW, drawH);
+            }
+
             ctx.restore();
         }
 
@@ -882,6 +905,7 @@ export class GameScene implements Scene {
     }
 
     private applyFitForce(tappedPiece: PuzzlePiece): void {
+        this.usedFitForce = true;
         const currentCellCol = Math.round((tappedPiece.x - this.gridX) / this.cellSize);
         const currentCellRow = Math.round((tappedPiece.y - this.gridY) / this.cellSize);
 
@@ -954,7 +978,14 @@ export class GameScene implements Scene {
         for (let i = 0; i < 3; i++) {
             this.ui.addElement(new Label({ x: startX + i * 60 - 15, y: (h - modalH) / 2 + 80, width: 30, height: 40, text: i < this.celebrationStars ? '⭐' : '☆', fontSize: 40, color: '#fbbf24' }));
         }
-        this.ui.addElement(new Label({ x: 0, y: (h - modalH) / 2 + 140, width: w, height: 30, text: `Earned: ${this.celebrationStars * 10} 🪙`, fontSize: 20, color: '#fff' }));
+
+        let yOffset = 140;
+        if (this.usedFitForce) {
+            this.ui.addElement(new Label({ x: 0, y: (h - modalH) / 2 + yOffset, width: w, height: 20, text: 'Fit Force limitó las estrellas a 1!', fontSize: 14, color: '#ec4899', bold: true }));
+            yOffset += 25;
+        }
+
+        this.ui.addElement(new Label({ x: 0, y: (h - modalH) / 2 + yOffset, width: w, height: 30, text: `Earned: ${this.celebrationStars * 10} 🪙`, fontSize: 20, color: '#fff' }));
         this.ui.addElement(new Button({ x: (w - 180) / 2, y: (h - modalH) / 2 + 200, width: 180, height: 50, text: 'Next Level', bgColor: '#059669', borderRadius: 15, onClick: () => { const nextId = this.level!.id + 1; const nextLevel = this.level!.id < 20 ? this.configLoader.getConfig().levels.find(l => l.id === nextId) : null; if (nextLevel) { this.level = nextLevel; this.enter(this.ctx); } else { this.stateManager.changeState(GameState.MainMenu); } } }));
         this.ui.addElement(new Button({ x: (w - 180) / 2, y: (h - modalH) / 2 + 265, width: 180, height: 45, text: 'Main Menu', bgColor: '#4b5563', borderRadius: 12, onClick: () => this.stateManager.changeState(GameState.MainMenu) }));
     }

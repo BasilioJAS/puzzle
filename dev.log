@@ -1,0 +1,11 @@
+
+> puzzle-game@0.0.1 dev
+> vite
+
+Re-optimizing dependencies because lockfile has changed
+Port 3000 is in use, trying another one...
+
+  VITE v5.4.21  ready in 724 ms
+
+  ➜  Local:   http://localhost:3001/puzzle/
+  ➜  Network: use --host to expose
