@@ -1,6 +1,9 @@
 import { GamePointerEvent, GameState } from '../types/GameTypes';
 import { SaveManager } from '../core/SaveManager';
 import { Button, Label, Panel } from './UIElement';
+import pkg from '../../package.json';
+
+const APP_VERSION: string = pkg.version;
 
 /**
  * CheatMenu — always-on debug overlay rendered on top of everything.
@@ -85,7 +88,16 @@ export class CheatMenu {
             bold: true,
         });
 
-        this.allElements = [this.panel, title, ...this.buttons];
+        // Version label
+        const versionLabel = new Label({
+            x: 12, y: 44, width: 144, height: 10,
+            text: `v${APP_VERSION}`,
+            fontSize: 9,
+            color: 'rgba(245,158,11,0.5)',
+            bold: false,
+        });
+
+        this.allElements = [this.panel, title, versionLabel, ...this.buttons];
     }
 
     configure(opts: {
