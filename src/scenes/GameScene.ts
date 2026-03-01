@@ -74,6 +74,9 @@ export class GameScene implements Scene {
     // UI refs
     private timerLabel!: Label;
 
+    // Power-up tracking
+    private powerUpUsed: boolean = false;
+
     // Debug
     private showId: boolean = false;
 
@@ -143,6 +146,7 @@ export class GameScene implements Scene {
         this.fitForceMode = false;
         this.fitForceLabel = null;
         this.celebrating = false;
+        this.powerUpUsed = false;
 
         if (!this.level) return;
         this.timeRemaining = this.level.timeLimit;
@@ -463,6 +467,7 @@ export class GameScene implements Scene {
     }
 
     private calculateStars(): number {
+        if (this.powerUpUsed) return 1;
         const config = this.configLoader.getConfig();
         const settings = config.settings;
         const pctRemaining = this.timeRemaining / this.level!.timeLimit;
@@ -762,19 +767,29 @@ export class GameScene implements Scene {
         ctx.fillStyle = `rgba(254, 243, 226, ${this.celebrationAlpha * 0.92})`;
         ctx.fillRect(0, 0, w, h);
         const image = this.assetManager.getImage(this.level!.image);
-        if (image) {
+        if (image && this.level) {
+            const cols = this.level.cols;
+            const rows = this.level.rows;
             const padding = 40;
             const maxW = w - padding * 2;
             const maxH = h - padding * 2;
-            const imgAspect = image.width / image.height;
-            const screenAspect = maxW / maxH;
-            let drawW, drawH;
-            if (imgAspect > screenAspect) { drawW = maxW; drawH = maxW / imgAspect; }
-            else { drawH = maxH; drawW = maxH * imgAspect; }
+            // Fit the grid into the screen keeping it square
+            const cellDraw = Math.min(Math.floor(maxW / cols), Math.floor(maxH / rows));
+            const gridDrawW = cellDraw * cols;
+            const gridDrawH = cellDraw * rows;
+            const originX = (w - gridDrawW) / 2;
+            const originY = (h - gridDrawH) / 2;
+
             ctx.globalAlpha = this.celebrationAlpha;
             ctx.save();
             ctx.shadowColor = 'rgba(0,0,0,0.3)'; ctx.shadowBlur = 20; ctx.shadowOffsetY = 10;
-            ctx.drawImage(image, (w - drawW) / 2, (h - drawH) / 2, drawW, drawH);
+
+            // Draw each piece in its final (possibly FitForce-modified) position
+            for (const piece of this.pieces) {
+                const destX = originX + piece.col * cellDraw;
+                const destY = originY + piece.row * cellDraw;
+                ctx.drawImage(image, piece.sx, piece.sy, piece.sw, piece.sh, destX, destY, cellDraw, cellDraw);
+            }
             ctx.restore();
         }
 
@@ -831,6 +846,7 @@ export class GameScene implements Scene {
         if (unplaced.length === 0) return;
         this.hintPiece = unplaced[Math.floor(Math.random() * unplaced.length)];
         this.hintTimer = 3;
+        this.powerUpUsed = true;
         this.saveManager.usePowerUp('hint');
         this.assetManager.playSound('click');
         this.buildUI();
@@ -840,6 +856,7 @@ export class GameScene implements Scene {
         if (this.gameEnded || this.isSlowTime) return;
         this.isSlowTime = true;
         this.slowTimeRemaining = 10;
+        this.powerUpUsed = true;
         this.saveManager.usePowerUp('slowTime');
         this.assetManager.playSound('click');
         this.buildUI();
@@ -847,6 +864,7 @@ export class GameScene implements Scene {
 
     private useSkip(): void {
         if (this.gameEnded) return;
+        this.powerUpUsed = true;
         this.assetManager.playSound('click');
         this.saveManager.usePowerUp('skip');
         this.triggerWin();
@@ -906,6 +924,7 @@ export class GameScene implements Scene {
         }
 
         this.placePieceLocked(tappedPiece);
+        this.powerUpUsed = true;
         this.saveManager.usePowerUp('fitForce');
         this.exitFitForceMode();
     }
