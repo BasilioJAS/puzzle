@@ -17,7 +17,7 @@ export class BootScene implements Scene {
         this.loading = true;
         this.error = '';
         this.configLoader
-            .load('/game_config.json')
+            .load(`${import.meta.env.BASE_URL}game_config.json`)
             .then(() => {
                 this.loading = false;
                 this.stateManager.changeState(GameState.Preload);

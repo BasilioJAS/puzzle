@@ -113,7 +113,7 @@ function initAfterBoot(): void {
 // Override Boot scene
 bootScene.enter = function (_c: CanvasRenderingContext2D) {
     configLoader
-        .load('/game_config.json')
+        .load(`${import.meta.env.BASE_URL}game_config.json`)
         .then(() => {
             initAfterBoot();
             stateManager.changeState(GameState.Preload);

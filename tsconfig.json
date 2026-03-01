@@ -12,7 +12,10 @@
         "declaration": false,
         "noUnusedLocals": false,
         "noUnusedParameters": false,
-        "resolveJsonModule": true
+        "resolveJsonModule": true,
+        "types": [
+            "vite/client"
+        ]
     },
     "include": [
         "src/**/*.ts"
