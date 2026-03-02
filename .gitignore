@@ -1,0 +1,4 @@
+# Specify filepatterns you want git to ignore.
+
+/tools/test_masks/
+/tools/test_pieces/
