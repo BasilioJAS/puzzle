@@ -17,6 +17,9 @@ export class MapScene implements Scene {
     private canvasH: number = 0;
     private elapsed: number = 0;
     private nodeButtons: { btn: Button; levelId: number }[] = [];
+    private isProbing: boolean = false;
+    private popupElements: import('../ui/UIElement').UIElement[] = [];
+    private overlayElements: import('../ui/UIElement').UIElement[] = [];
 
     // Callback set by Main.ts to pass level index to GameScene
     public onSelectLevel?: (level: LevelConfig) => void;
@@ -186,9 +189,8 @@ export class MapScene implements Scene {
                 borderRadius: nodeSize / 2,
                 textColor: isUnlocked ? '#ffffff' : '#6b7280',
                 onClick: () => {
-                    if (isUnlocked) {
-                        if (this.onSelectLevel) this.onSelectLevel(level);
-                        this.stateManager.changeState(GameState.Gameplay);
+                    if (isUnlocked && !this.isProbing && this.popupElements.length === 0) {
+                        this.probeAndLoadLevel(level);
                     }
                 },
             });
@@ -224,6 +226,115 @@ export class MapScene implements Scene {
         }
 
         this.ui.addElement(this.scrollView);
+    }
+
+    private async probeAndLoadLevel(level: LevelConfig) {
+        this.isProbing = true;
+        // Create a simple loading overlay
+        const overlay = new Panel({
+            x: 0, y: 0, width: this.canvasW, height: this.canvasH,
+            bgColor: 'rgba(0,0,0,0.85)', borderRadius: 0
+        });
+        const lbl = new Label({
+            x: 0, y: this.canvasH / 2 - 20, width: this.canvasW, height: 40,
+            text: 'Loading level data...', color: 'white', fontSize: 24, bold: true
+        });
+
+        this.overlayElements = [overlay, lbl];
+        this.overlayElements.forEach(el => this.ui.addElement(el));
+
+        try {
+            const baseUrl = import.meta.env.BASE_URL;
+            // 1. Check if level exists at all (file piece_0_0.png)
+            const firstUrl = `${baseUrl}assets/levels/${level.id}/piece_0_0.png`;
+            const firstRes = await fetch(firstUrl, { method: 'HEAD' });
+
+            const isImage = (r: Response) => r.ok && r.headers.get('content-type')?.includes('image');
+
+            if (!isImage(firstRes)) {
+                throw new Error("Level files missing");
+            }
+
+            // 2. Discover columns (iterate c until 404 or non-image)
+            let c = 1;
+            while (true) {
+                const url = `${baseUrl}assets/levels/${level.id}/piece_0_${c}.png`;
+                const res = await fetch(url, { method: 'HEAD' });
+                if (!isImage(res)) break;
+                c++;
+            }
+            level.cols = c;
+
+            // 3. Discover rows (iterate r until 404 or non-image)
+            let r = 1;
+            while (true) {
+                const url = `${baseUrl}assets/levels/${level.id}/piece_${r}_0.png`;
+                const res = await fetch(url, { method: 'HEAD' });
+                if (!isImage(res)) break;
+                r++;
+            }
+            level.rows = r;
+
+            level.pieces = level.cols * level.rows;
+            level.piecesFolder = `assets/levels/${level.id}/`;
+
+            this.overlayElements.forEach(el => this.ui.removeElement(el));
+            this.overlayElements = [];
+            this.isProbing = false;
+
+            if (this.onSelectLevel) this.onSelectLevel(level);
+            this.stateManager.changeState(GameState.Gameplay);
+
+        } catch (e) {
+            console.error("Probing failed:", e);
+            this.overlayElements.forEach(el => this.ui.removeElement(el));
+            this.overlayElements = [];
+            this.isProbing = false;
+            this.showErrorPopup(level.id);
+        }
+    }
+
+    private showErrorPopup(levelId: number) {
+        if (this.popupElements.length > 0) return;
+
+        const w = 300;
+        const h = 200;
+        const panel = new Panel({
+            x: this.canvasW / 2 - w / 2,
+            y: this.canvasH / 2 - h / 2,
+            width: w,
+            height: h,
+            bgColor: '#1f2937',
+            borderColor: '#374151',
+            borderRadius: 12,
+            borderWidth: 2
+        });
+
+        const titleParams = {
+            x: panel.x, y: panel.y + 30, width: w, height: 30,
+            text: 'ERROR', fontSize: 24, color: '#ef4444', bold: true
+        };
+        const titleLabel = new Label(titleParams);
+
+        // Sin "wrap" property, achicamos un poco la font
+        const msgParams = {
+            x: panel.x + 20, y: panel.y + 80, width: w - 40, height: 60,
+            text: `Data for level ${levelId} is missing...`,
+            fontSize: 14, color: '#d1d5db'
+        };
+        const msgLabel = new Label(msgParams);
+
+        const closeBtn = new Button({
+            x: panel.x + w / 2 - 50, y: panel.y + 140, width: 100, height: 40,
+            text: 'CLOSE', bgColor: '#4b5563', bgColorHover: '#6b7280',
+            onClick: () => {
+                this.popupElements.forEach(el => this.ui.removeElement(el));
+                this.popupElements = [];
+            }
+        });
+
+        this.popupElements = [panel, titleLabel, msgLabel, closeBtn];
+        this.popupElements.forEach(el => this.ui.addElement(el));
     }
 
     exit(): void {

@@ -69,12 +69,12 @@
                 "x": 0.15,
                 "y": 0.09,
                 "w": 0.7,
-                "h": 0.50
+                "h": 0.5
             },
             "tray": {
-                "x": 0.10,
+                "x": 0.1,
                 "y": 0.62,
-                "w": 0.80,
+                "w": 0.8,
                 "h": 0.36
             },
             "trayDirection": "horizontal",
@@ -116,404 +116,203 @@
     "levels": [
         {
             "id": 1,
-            "pieces": 9,
-            "timeLimit": 120,
-            "image": "puzzle1",
-            "piecesFolder": "assets/puzzle1_pieces",
-            "cols": 3,
-            "rows": 3
+            "timeLimit": 120
         },
         {
             "id": 2,
-            "pieces": 4,
-            "timeLimit": 110,
-            "image": "puzzle2",
-            "cols": 2,
-            "rows": 2
+            "timeLimit": 110
         },
         {
             "id": 3,
-            "pieces": 4,
-            "timeLimit": 100,
-            "image": "puzzle3",
-            "cols": 2,
-            "rows": 2
+            "timeLimit": 100
         },
         {
             "id": 4,
-            "pieces": 4,
-            "timeLimit": 90,
-            "image": "puzzle1",
-            "cols": 2,
-            "rows": 2
+            "timeLimit": 90
         },
         {
             "id": 5,
-            "pieces": 4,
-            "timeLimit": 80,
-            "image": "puzzle2",
-            "cols": 2,
-            "rows": 2
+            "timeLimit": 80
         },
         {
             "id": 6,
-            "pieces": 9,
-            "timeLimit": 180,
-            "image": "puzzle3",
-            "cols": 3,
-            "rows": 3
+            "timeLimit": 180
         },
         {
             "id": 7,
-            "pieces": 9,
-            "timeLimit": 170,
-            "image": "puzzle1",
-            "cols": 3,
-            "rows": 3
+            "timeLimit": 170
         },
         {
             "id": 8,
-            "pieces": 9,
-            "timeLimit": 160,
-            "image": "puzzle2",
-            "cols": 3,
-            "rows": 3
+            "timeLimit": 160
         },
         {
             "id": 9,
-            "pieces": 9,
-            "timeLimit": 150,
-            "image": "puzzle3",
-            "cols": 3,
-            "rows": 3
+            "timeLimit": 150
         },
         {
             "id": 10,
-            "pieces": 9,
-            "timeLimit": 140,
-            "image": "puzzle1",
-            "cols": 3,
-            "rows": 3
+            "timeLimit": 140
         },
         {
             "id": 11,
-            "pieces": 9,
-            "timeLimit": 130,
-            "image": "puzzle2",
-            "cols": 3,
-            "rows": 3
+            "timeLimit": 130
         },
         {
             "id": 12,
-            "pieces": 9,
-            "timeLimit": 120,
-            "image": "puzzle3",
-            "cols": 3,
-            "rows": 3
+            "timeLimit": 120
         },
         {
             "id": 13,
-            "pieces": 9,
-            "timeLimit": 110,
-            "image": "puzzle1",
-            "cols": 3,
-            "rows": 3
+            "timeLimit": 110
         },
         {
             "id": 14,
-            "pieces": 9,
-            "timeLimit": 100,
-            "image": "puzzle2",
-            "cols": 3,
-            "rows": 3
+            "timeLimit": 100
         },
         {
             "id": 15,
-            "pieces": 9,
-            "timeLimit": 90,
-            "image": "puzzle3",
-            "cols": 3,
-            "rows": 3
+            "timeLimit": 90
         },
         {
             "id": 16,
-            "pieces": 16,
-            "timeLimit": 240,
-            "image": "puzzle1",
-            "cols": 4,
-            "rows": 4
+            "timeLimit": 240
         },
         {
             "id": 17,
-            "pieces": 16,
-            "timeLimit": 230,
-            "image": "puzzle2",
-            "cols": 4,
-            "rows": 4
+            "timeLimit": 230
         },
         {
             "id": 18,
-            "pieces": 16,
-            "timeLimit": 220,
-            "image": "puzzle3",
-            "cols": 4,
-            "rows": 4
+            "timeLimit": 220
         },
         {
             "id": 19,
-            "pieces": 16,
-            "timeLimit": 210,
-            "image": "puzzle1",
-            "cols": 4,
-            "rows": 4
+            "timeLimit": 210
         },
         {
             "id": 20,
-            "pieces": 16,
-            "timeLimit": 200,
-            "image": "puzzle2",
-            "cols": 4,
-            "rows": 4
+            "timeLimit": 200
         },
         {
             "id": 21,
-            "pieces": 16,
-            "timeLimit": 190,
-            "image": "puzzle3",
-            "cols": 4,
-            "rows": 4
+            "timeLimit": 190
         },
         {
             "id": 22,
-            "pieces": 16,
-            "timeLimit": 180,
-            "image": "puzzle1",
-            "cols": 4,
-            "rows": 4
+            "timeLimit": 180
         },
         {
             "id": 23,
-            "pieces": 16,
-            "timeLimit": 170,
-            "image": "puzzle2",
-            "cols": 4,
-            "rows": 4
+            "timeLimit": 170
         },
         {
             "id": 24,
-            "pieces": 16,
-            "timeLimit": 160,
-            "image": "puzzle3",
-            "cols": 4,
-            "rows": 4
+            "timeLimit": 160
         },
         {
             "id": 25,
-            "pieces": 16,
-            "timeLimit": 150,
-            "image": "puzzle1",
-            "cols": 4,
-            "rows": 4
+            "timeLimit": 150
         },
         {
             "id": 26,
-            "pieces": 25,
-            "timeLimit": 300,
-            "image": "puzzle2",
-            "cols": 5,
-            "rows": 5
+            "timeLimit": 300
         },
         {
             "id": 27,
-            "pieces": 25,
-            "timeLimit": 290,
-            "image": "puzzle3",
-            "cols": 5,
-            "rows": 5
+            "timeLimit": 290
         },
         {
             "id": 28,
-            "pieces": 25,
-            "timeLimit": 280,
-            "image": "puzzle1",
-            "cols": 5,
-            "rows": 5
+            "timeLimit": 280
         },
         {
             "id": 29,
-            "pieces": 25,
-            "timeLimit": 270,
-            "image": "puzzle2",
-            "cols": 5,
-            "rows": 5
+            "timeLimit": 270
         },
         {
             "id": 30,
-            "pieces": 25,
-            "timeLimit": 260,
-            "image": "puzzle3",
-            "cols": 5,
-            "rows": 5
+            "timeLimit": 260
         },
         {
             "id": 31,
-            "pieces": 25,
-            "timeLimit": 250,
-            "image": "puzzle1",
-            "cols": 5,
-            "rows": 5
+            "timeLimit": 250
         },
         {
             "id": 32,
-            "pieces": 25,
-            "timeLimit": 240,
-            "image": "puzzle2",
-            "cols": 5,
-            "rows": 5
+            "timeLimit": 240
         },
         {
             "id": 33,
-            "pieces": 25,
-            "timeLimit": 230,
-            "image": "puzzle3",
-            "cols": 5,
-            "rows": 5
+            "timeLimit": 230
         },
         {
             "id": 34,
-            "pieces": 25,
-            "timeLimit": 220,
-            "image": "puzzle1",
-            "cols": 5,
-            "rows": 5
+            "timeLimit": 220
         },
         {
             "id": 35,
-            "pieces": 25,
-            "timeLimit": 210,
-            "image": "puzzle2",
-            "cols": 5,
-            "rows": 5
+            "timeLimit": 210
         },
         {
             "id": 36,
-            "pieces": 25,
-            "timeLimit": 200,
-            "image": "puzzle3",
-            "cols": 5,
-            "rows": 5
+            "timeLimit": 200
         },
         {
             "id": 37,
-            "pieces": 25,
-            "timeLimit": 190,
-            "image": "puzzle1",
-            "cols": 5,
-            "rows": 5
+            "timeLimit": 190
         },
         {
             "id": 38,
-            "pieces": 25,
-            "timeLimit": 180,
-            "image": "puzzle2",
-            "cols": 5,
-            "rows": 5
+            "timeLimit": 180
         },
         {
             "id": 39,
-            "pieces": 25,
-            "timeLimit": 170,
-            "image": "puzzle3",
-            "cols": 5,
-            "rows": 5
+            "timeLimit": 170
         },
         {
             "id": 40,
-            "pieces": 25,
-            "timeLimit": 160,
-            "image": "puzzle1",
-            "cols": 5,
-            "rows": 5
+            "timeLimit": 160
         },
         {
             "id": 41,
-            "pieces": 25,
-            "timeLimit": 150,
-            "image": "puzzle2",
-            "cols": 5,
-            "rows": 5
+            "timeLimit": 150
         },
         {
             "id": 42,
-            "pieces": 25,
-            "timeLimit": 140,
-            "image": "puzzle3",
-            "cols": 5,
-            "rows": 5
+            "timeLimit": 140
         },
         {
             "id": 43,
-            "pieces": 25,
-            "timeLimit": 130,
-            "image": "puzzle1",
-            "cols": 5,
-            "rows": 5
+            "timeLimit": 130
         },
         {
             "id": 44,
-            "pieces": 25,
-            "timeLimit": 120,
-            "image": "puzzle2",
-            "cols": 5,
-            "rows": 5
+            "timeLimit": 120
         },
         {
             "id": 45,
-            "pieces": 25,
-            "timeLimit": 110,
-            "image": "puzzle3",
-            "cols": 5,
-            "rows": 5
+            "timeLimit": 110
         },
         {
             "id": 46,
-            "pieces": 25,
-            "timeLimit": 100,
-            "image": "puzzle1",
-            "cols": 5,
-            "rows": 5
+            "timeLimit": 100
         },
         {
             "id": 47,
-            "pieces": 25,
-            "timeLimit": 95,
-            "image": "puzzle2",
-            "cols": 5,
-            "rows": 5
+            "timeLimit": 95
         },
         {
             "id": 48,
-            "pieces": 25,
-            "timeLimit": 90,
-            "image": "puzzle3",
-            "cols": 5,
-            "rows": 5
+            "timeLimit": 90
         },
         {
             "id": 49,
-            "pieces": 25,
-            "timeLimit": 85,
-            "image": "puzzle1",
-            "cols": 5,
-            "rows": 5
+            "timeLimit": 85
         },
         {
             "id": 50,
-            "pieces": 25,
-            "timeLimit": 80,
-            "image": "puzzle2",
-            "cols": 5,
-            "rows": 5
+            "timeLimit": 80
         }
     ],
     "shop": {
@@ -559,6 +358,6 @@
         "winHardReward": 1,
         "star3Pct": 0.6,
         "star2Pct": 0.3,
-        "unplacedPieceGrayscale": 0.90
+        "unplacedPieceGrayscale": 0.9
     }
 }

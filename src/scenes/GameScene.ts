@@ -277,10 +277,11 @@ export class GameScene implements Scene {
         if (!this.level) return;
 
         this.pieces = [];
-        const { cols, rows } = this.level;
-        const image = this.assetManager.getImage(this.level.image);
-        const imgW = image?.naturalWidth ?? 256;
-        const imgH = image?.naturalHeight ?? 256;
+        const cols = this.level.cols || 3;
+        const rows = this.level.rows || 3;
+        const image = this.level.image ? this.assetManager.getImage(this.level.image) : null;
+        const imgW = image?.naturalWidth ?? 640;
+        const imgH = image?.naturalHeight ?? 640;
 
         let id = 0;
         const positions: { c: number, r: number }[] = [];
@@ -734,7 +735,7 @@ export class GameScene implements Scene {
     }
 
     private drawPiece(ctx: CanvasRenderingContext2D, piece: PuzzlePiece): void {
-        const image = this.assetManager.getImage(this.level!.image);
+        const image = this.level!.image ? this.assetManager.getImage(this.level!.image) : null;
         ctx.save();
         const cx = piece.x + piece.width / 2;
         const cy = piece.y + piece.height / 2;
@@ -780,14 +781,13 @@ export class GameScene implements Scene {
                 // But we actually only have indImg, we don't have the original cell_w_pixels.
                 // Wait, if cutter pads evenly so cell is dead-center, drawing indImg centered on piece.x+piece.width/2 
                 // scaled appropriately will work exactly perfect.
-                // Because if the mask was generated from "X columns over grid", then ratio = piece.width / cell_w_pixels.
-                // Let's deduce ratio assuming the image has a base padding. We scaled original puzzle image down by cols.
-                // It's much simpler: puzzle piece image is relative. Let's draw it spanning larger than width.
-                const imgAspect = indImg.width / indImg.height;
-                const cellRefImage = this.assetManager.getImage(this.level!.image);
+                const cellRefImage = this.level!.image ? this.assetManager.getImage(this.level!.image) : null;
                 let drawRatio = 1;
                 if (cellRefImage) {
                     const originalCellPxW = cellRefImage.width / this.level!.cols;
+                    drawRatio = indImg.width / originalCellPxW;
+                } else {
+                    const originalCellPxW = 640 / this.level!.cols;
                     drawRatio = indImg.width / originalCellPxW;
                 }
 
@@ -846,10 +846,10 @@ export class GameScene implements Scene {
     private renderCelebration(ctx: CanvasRenderingContext2D, w: number, h: number): void {
         ctx.fillStyle = `rgba(254, 243, 226, ${this.celebrationAlpha * 0.92})`;
         ctx.fillRect(0, 0, w, h);
-        const image = this.assetManager.getImage(this.level!.image);
-        if (image && this.level) {
-            const cols = this.level.cols;
-            const rows = this.level.rows;
+        const image = this.level!.image ? this.assetManager.getImage(this.level!.image) : null;
+        if (this.level) {
+            const cols = this.level.cols || 3;
+            const rows = this.level.rows || 3;
             const padding = 40;
             const maxW = w - padding * 2;
             const maxH = h - padding * 2;
@@ -867,7 +867,7 @@ export class GameScene implements Scene {
             if (this.level.piecesFolder) {
                 // Dibuja PNGs disgregados de cada pieza en su grilla final calculada con ratio de padding.
                 const cellRefImage = image;
-                const originalCellPxW = cellRefImage.width / this.level!.cols;
+                const originalCellPxW = cellRefImage ? cellRefImage.width / cols : 640 / cols;
 
                 for (const piece of this.pieces) {
                     if (piece.imageKey) {
@@ -884,7 +884,7 @@ export class GameScene implements Scene {
                         }
                     }
                 }
-            } else {
+            } else if (image) {
                 // Dibuja recortando de img fuente (lógica clásica legacy)
                 for (const piece of this.pieces) {
                     const destX = originX + piece.col * cellDraw;

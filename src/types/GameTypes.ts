@@ -52,12 +52,13 @@ export interface AssetConfig {
 
 export interface LevelConfig {
     id: number;
-    pieces: number;
     timeLimit: number;
-    image: string;
+    // Runtime deduced fields when probing level:
+    pieces: number;
     cols: number;
     rows: number;
     piecesFolder?: string;
+    image?: string; // fallback
 }
 
 export interface ShopItem {
