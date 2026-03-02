@@ -44,15 +44,18 @@ def cubic_bezier(p0, p1, p2, p3, n=25):
 
 # ── Edge shape ─────────────────────────────────────────────────────────────────
 
-def edge_points(ax, ay, bx, by, direction, tab_ratio=0.32, n_curve=20):
+def edge_points(ax, ay, bx, by, direction, n_curve=20):
     """
     Genera puntos a lo largo de un borde de rompecabezas de (ax,ay) a (bx,by).
 
     direction:
       +1  → la pestaña sobresale hacia la "izquierda" del vector AB
-      -1  → la ranura se hunde hacia la "derecha" (o viceversa)
-       0  → borde recto (sin pestaña)
+      -1  → la ranura se hunde hacia la "derecha"
+       0  → borde recto (borde del marco)
     """
+    if direction == 0:
+        return [(ax, ay), (bx, by)]
+
     dx, dy = bx - ax, by - ay
     length = math.hypot(dx, dy)
 
@@ -60,36 +63,40 @@ def edge_points(ax, ay, bx, by, direction, tab_ratio=0.32, n_curve=20):
     tx, ty = dx / length, dy / length
     nx, ny = -ty, tx  # normal: 90° CCW respecto a la dirección de avance
 
-    jut = length * tab_ratio * direction  # desplazamiento de la pestaña
-
-    def pt(along_frac, perp=0.0):
-        """Convierte fracción del borde + desplazamiento perpendicular → xy."""
-        a = length * along_frac
-        return [ax + tx*a + nx*perp, ay + ty*a + ny*perp]
-
-    # Puntos de control del contorno de la pestaña
-    p_start  = pt(0.00)
-    p_pre    = pt(0.30)
-    p_rise1  = pt(0.37, jut * 0.5)
-    p_top1   = pt(0.43, jut * 1.00)
-    p_peak   = pt(0.50, jut * 1.18)  # ligero overshooting → redondez
-    p_top2   = pt(0.57, jut * 1.00)
-    p_fall1  = pt(0.63, jut * 0.5)
-    p_post   = pt(0.70)
-    p_end    = pt(1.00)
+    def pt(along, perp):
+        """Convierte xy relativos (0 a 1) a absolutos en pantalla"""
+        a = length * along
+        p = length * perp * direction
+        return [ax + tx*a + nx*p, ay + ty*a + ny*p]
 
     pts = []
+    def add_curve(p0, p1, p2, p3):
+        # Genera los puntos de la curva y descarta el primero (para no duplicar)
+        curve = cubic_bezier(pt(*p0), pt(*p1), pt(*p2), pt(*p3), n_curve)[1:]
+        pts.extend(curve.tolist())
 
-    # 1. Recto hasta pre-tab
-    pts.extend(cubic_bezier(p_start, p_start, p_pre, p_pre, 8)[0:].tolist())
-    # 2. Subida a la pestaña
-    pts.extend(cubic_bezier(p_pre, p_pre, p_rise1, p_top1, n_curve)[1:].tolist())
-    # 3. Arco sobre la pestaña
-    pts.extend(cubic_bezier(p_top1, p_peak, p_peak, p_top2, n_curve)[1:].tolist())
-    # 4. Bajada de la pestaña
-    pts.extend(cubic_bezier(p_top2, p_fall1, p_post, p_post, n_curve)[1:].tolist())
-    # 5. Recto hasta el final
-    pts.extend(cubic_bezier(p_post, p_post, p_end, p_end, 8)[1:].tolist())
+    pts.append(pt(0.00, 0.00))
+
+    # Control points cuidadosamente afinados para un bulbo clásico de rompecabezas
+    # (x_a_lo_largo, y_perpendicular)
+
+    # 1. Base recta hasta el lado izquierdo del cuello
+    add_curve((0.00, 0.00), (0.14, 0.00), (0.28, 0.00), (0.43, 0.00))
+
+    # 2. Cuello izquierdo (se curva hacia arriba y hacia el centro)
+    add_curve((0.43, 0.00), (0.485, 0.00), (0.485, 0.15), (0.41, 0.15))
+
+    # 3. Mitad izquierda de la cabeza circular
+    add_curve((0.41, 0.15), (0.335, 0.15), (0.335, 0.30), (0.50, 0.30))
+
+    # 4. Mitad derecha de la cabeza circular
+    add_curve((0.50, 0.30), (0.665, 0.30), (0.665, 0.15), (0.59, 0.15))
+
+    # 5. Cuello derecho (vuelve hacia abajo y hacia la derecha)
+    add_curve((0.59, 0.15), (0.515, 0.15), (0.515, 0.00), (0.57, 0.00))
+
+    # 6. Base recta final
+    add_curve((0.57, 0.00), (0.71, 0.00), (0.85, 0.00), (1.00, 0.00))
 
     return pts
 

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puzzle Mask Visual Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #e5e5e5;
+            user-select: none;
+        }
+    </style>
+</head>
+
+<body class="flex flex-col h-screen overflow-hidden">
+    <header class="bg-gray-900 border-b border-gray-800 p-4 flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-violet-400">Puzzle Mask Tuning</h1>
+        <div class="flex gap-4">
+            <label class="flex items-center gap-2 text-sm text-gray-400">
+                <input type="checkbox" id="toggle_symmetry" checked class="accent-violet-500">
+                Enforce Symmetry (Mirrored Left-Right)
+            </label>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+        <!-- Panel Izquierdo: Controles -->
+        <div class="w-80 bg-gray-900 border-r border-gray-800 p-6 overflow-y-auto flex flex-col gap-6">
+
+            <div>
+                <h2 class="text-lg font-semibold text-gray-300 mb-2 border-b border-gray-700 pb-2">How to use</h2>
+                <ul class="text-sm text-gray-400 list-disc pl-4 space-y-2">
+                    <li><strong class="text-violet-400 text-lg">●</strong> <strong>Knots (Blue):</strong> Endpoints of
+                        the curves. Drag to move the joints.</li>
+                    <li><strong class="text-red-400 text-lg">●</strong> <strong>Handles (Red):</strong> Bezier control
+                        points. Drag to change the curve shape.</li>
+                    <li>Toggle "Enforce Symmetry" to move both sides at once for perfect puzzle pieces.</li>
+                </ul>
+            </div>
+
+            <div class="mt-auto pt-6">
+                <button id="btn_export"
+                    class="w-full bg-violet-600 hover:bg-violet-500 text-white font-bold py-2 px-4 rounded transition-colors shadow-lg">
+                    Export Values for Python
+                </button>
+                <div id="export_box" class="mt-4">
+                    <textarea id="python_code"
+                        class="w-full h-40 bg-gray-950 text-green-400 text-xs font-mono p-2 rounded border border-gray-700"
+                        readonly></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel Derecho: Canvas -->
+        <div class="flex-1 flex items-center justify-center p-8 bg-[#0f0f0f] relative grid-bg" id="canvasContainer">
+            <canvas id="previewCanvas" class="shadow-2xl shadow-violet-900/20 rounded-lg border border-gray-700"
+                style="cursor: crosshair;"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('previewCanvas');
+        const ctx = canvas.getContext('2d');
+        const symToggle = document.getElementById('toggle_symmetry');
+
+        // Tamaño de la vista
+        const cell = 600;
+        const pad = 300;
+        canvas.width = cell + pad * 2;
+        canvas.height = cell + pad * 2;
+
+        const originX = pad;
+        const originY = pad;
+
+        // Convierte coordenadas relativas (0-1) a canvas absolutas
+        function toCanvas(pt) {
+            return {
+                x: originX + pt.x * cell,
+                y: originY - pt.y * cell // Y grows upwards in edge relative coordinates
+            };
+        }
+
+        // Convierte coordenadas absolutas a relativas (0-1)
+        function toRelative(pt) {
+            return {
+                x: (pt.x - originX) / cell,
+                y: (originY - pt.y) / cell
+            };
+        }
+
+        // Puntos iniciales del bulbo clásico
+        // 19 puntos totales para 6 curvas Bezier unidas
+        let points = [
+            { x: 0.00, y: 0.00 }, // 0: fixed start
+
+            { x: 0.14, y: 0.00 }, // 1: C1_1
+            { x: 0.28, y: 0.00 }, // 2: C1_2
+            { x: 0.43, y: 0.00 }, // 3: Knot 1
+
+            { x: 0.485, y: 0.00 }, // 4: C2_1
+            { x: 0.485, y: 0.15 }, // 5: C2_2
+            { x: 0.41, y: 0.15 },  // 6: Knot 2
+
+            { x: 0.335, y: 0.15 }, // 7: C3_1
+            { x: 0.335, y: 0.30 }, // 8: C3_2
+            { x: 0.50, y: 0.30 },  // 9: Center Knot
+
+            { x: 0.665, y: 0.30 }, // 10: C4_1
+            { x: 0.665, y: 0.15 }, // 11: C4_2
+            { x: 0.59, y: 0.15 },  // 12: Knot 4
+
+            { x: 0.515, y: 0.15 }, // 13: C5_1
+            { x: 0.515, y: 0.00 }, // 14: C5_2
+            { x: 0.57, y: 0.00 },  // 15: Knot 5
+
+            { x: 0.72, y: 0.00 }, // 16: C6_1
+            { x: 0.86, y: 0.00 }, // 17: C6_2
+
+            { x: 1.00, y: 0.00 }  // 18: fixed end
+        ];
+
+        // Mapeo de índices para simetría (qué punto refleja a qué punto)
+        const paramSym = {
+            1: 17, 2: 16, 3: 15,
+            4: 14, 5: 13, 6: 12,
+            7: 11, 8: 10, 9: 9
+        };
+
+        let draggingIdx = -1;
+
+        // Eventos del Mouse
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            // Calcula las coordenadas en resolución del canvas
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
+
+            // Busca el punto clickeado (empezando de atrás para agarrar los top-most)
+            for (let i = points.length - 1; i >= 0; i--) {
+                const pt = toCanvas(points[i]);
+                const dx = pt.x - mouseX;
+                const dy = pt.y - mouseY;
+                if (dx * dx + dy * dy < 200) { // Radio de colisión (14px al cuadrado = 196)
+                    if (i !== 0 && i !== 18) { // Los extremos no se mueven
+                        draggingIdx = i;
+                        canvas.style.cursor = 'grabbing';
+                        break;
+                    }
+                }
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (draggingIdx === -1) return;
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
+
+            const rel = toRelative({ x: mouseX, y: mouseY });
+
+            if (symToggle.checked) {
+                // Movimiento restringido en Knot Central (solo mueve en Y)
+                if (draggingIdx === 9) {
+                    points[9].y = rel.y;
+                    points[9].x = 0.5;
+                } else {
+                    points[draggingIdx] = rel;
+
+                    // Actualiza el punto simétrico
+                    let symIdx = paramSym[draggingIdx];
+                    if (symIdx === undefined) {
+                        // Buscar el inverso en paramSym
+                        for (let k in paramSym) {
+                            if (paramSym[k] === draggingIdx) symIdx = parseInt(k);
+                        }
+                    }
+                    if (symIdx !== undefined) {
+                        points[symIdx].x = 1.0 - rel.x;
+                        points[symIdx].y = rel.y;
+                    }
+                }
+            } else {
+                points[draggingIdx] = rel;
+                // Si movemos el central sin simetría
+                if (draggingIdx === 9 && !symToggle.checked) {
+                    // lo dejamos moverse libre
+                }
+            }
+
+            draw();
+        });
+
+        window.addEventListener('mouseup', () => {
+            draggingIdx = -1;
+            canvas.style.cursor = 'crosshair';
+        });
+
+        symToggle.addEventListener('change', draw);
+
+        // Genera array de puntos Bezier cúbico (solo dibujado)
+        function getBezierPoints(p0, p1, p2, p3, steps = 30) {
+            const pts = [];
+            for (let i = 0; i <= steps; i++) {
+                const t = i / steps;
+                const mt = 1 - t;
+                const mt3 = mt * mt * mt;
+                const t3 = t * t * t;
+
+                const x = mt3 * p0.x + 3 * mt * mt * t * p1.x + 3 * mt * t * t * p2.x + t3 * p3.x;
+                const y = mt3 * p0.y + 3 * mt * mt * t * p1.y + 3 * mt * t * t * p2.y + t3 * p3.y;
+                pts.push({ x, y });
+            }
+            return pts;
+        }
+
+        function drawCurveSetup(idx0, idx1, idx2, idx3) {
+            const p0 = toCanvas(points[idx0]);
+            const p1 = toCanvas(points[idx1]);
+            const p2 = toCanvas(points[idx2]);
+            const p3 = toCanvas(points[idx3]);
+
+            // Líneas guía (tangentes)
+            ctx.save();
+            ctx.strokeStyle = '#4b5563'; // gray-600
+            ctx.lineWidth = 2;
+            ctx.setLineDash([6, 6]);
+            ctx.beginPath();
+            ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y);
+            ctx.moveTo(p2.x, p2.y); ctx.lineTo(p3.x, p3.y);
+            ctx.stroke();
+            ctx.restore();
+
+            // Puntos interactivos
+            const drawHandle = (p, color, size, isHovered) => {
+                ctx.fillStyle = color;
+                ctx.beginPath(); ctx.arc(p.x, p.y, size, 0, Math.PI * 2); ctx.fill();
+                if (isHovered) {
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+            };
+
+            const hSize = 8;
+            drawHandle(p1, '#ef4444', hSize, draggingIdx === idx1); // Red: Control handles
+            drawHandle(p2, '#ef4444', hSize, draggingIdx === idx2);
+            drawHandle(p0, '#3b82f6', hSize + 2, draggingIdx === idx0); // Blue: Knots
+            drawHandle(p3, '#3b82f6', hSize + 2, draggingIdx === idx3);
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Grid background pattern
+            ctx.fillStyle = '#111';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = '#222';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < canvas.width; i += 40) {
+                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
+            }
+
+            // Draw underlying box reference
+            ctx.strokeStyle = 'rgba(139, 92, 246, 0.3)'; // violet transparent
+            ctx.setLineDash([10, 10]);
+            ctx.lineWidth = 3;
+            ctx.strokeRect(originX, originY, cell, cell);
+            ctx.setLineDash([]);
+
+            const curves = [[0, 1, 2, 3], [3, 4, 5, 6], [6, 7, 8, 9], [9, 10, 11, 12], [12, 13, 14, 15], [15, 16, 17, 18]];
+
+            // Shape path (white fill preview)
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            const allPts = [];
+
+            curves.forEach(c => allPts.push(...getBezierPoints(toCanvas(points[c[0]]), toCanvas(points[c[1]]), toCanvas(points[c[2]]), toCanvas(points[c[3]]))));
+
+            ctx.moveTo(allPts[0].x, allPts[0].y);
+            allPts.forEach(pt => ctx.lineTo(pt.x, pt.y));
+
+            ctx.lineTo(originX + cell, originY + cell);
+            ctx.lineTo(originX, originY + cell);
+            ctx.closePath();
+            ctx.fill();
+
+            // Bezier outline
+            ctx.strokeStyle = '#2dd4bf'; // teal-400
+            ctx.lineWidth = 5;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(allPts[0].x, allPts[0].y);
+            allPts.forEach(pt => ctx.lineTo(pt.x, pt.y));
+            ctx.stroke();
+
+            // Handles and UI
+            curves.forEach(c => drawCurveSetup(c[0], c[1], c[2], c[3]));
+
+            updatePythonExport();
+        }
+
+        function updatePythonExport() {
+            const formatP = idx => {
+                const p = points[idx];
+                return `(${p.x.toFixed(3)}, ${p.y.toFixed(3)})`;
+            };
+
+            let code = `    # Control points visualmente generados (x_a_lo_largo, y_perpendicular)\n`;
+            const curves = [[0, 1, 2, 3], [3, 4, 5, 6], [6, 7, 8, 9], [9, 10, 11, 12], [12, 13, 14, 15], [15, 16, 17, 18]];
+
+            curves.forEach(c => {
+                code += `    add_curve(${formatP(c[0])}, ${formatP(c[1])}, ${formatP(c[2])}, ${formatP(c[3])})\n`;
+            });
+
+            document.getElementById('python_code').value = code;
+        }
+
+        document.getElementById('btn_export').addEventListener('click', () => {
+            navigator.clipboard.writeText(document.getElementById('python_code').value);
+            const btn = document.getElementById('btn_export');
+            btn.textContent = "Copied to Clipboard!";
+            btn.classList.add('bg-green-600', 'hover:bg-green-500');
+            btn.classList.remove('bg-violet-600', 'hover:bg-violet-500');
+            setTimeout(() => {
+                btn.textContent = "Export Values for Python";
+                btn.classList.remove('bg-green-600', 'hover:bg-green-500');
+                btn.classList.add('bg-violet-600', 'hover:bg-violet-500');
+            }, 2000);
+        });
+
+        // Initialize
+        draw();
+    </script>
+</body>
+
+</html>
