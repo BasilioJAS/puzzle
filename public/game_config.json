@@ -116,11 +116,12 @@
     "levels": [
         {
             "id": 1,
-            "pieces": 4,
+            "pieces": 9,
             "timeLimit": 120,
             "image": "puzzle1",
-            "cols": 2,
-            "rows": 2
+            "piecesFolder": "assets/puzzle1_pieces",
+            "cols": 3,
+            "rows": 3
         },
         {
             "id": 2,

@@ -123,12 +123,15 @@ export class GameScene implements Scene {
         }
     }
 
+    private loadingText: Label | null = null;
+    private isLoadingAssets: boolean = false;
+
     enter(ctx: CanvasRenderingContext2D): void {
         this.ctx = ctx;
         if (this.pausedForShop) {
             this.pausedForShop = false;
             this.ui.clear();
-            this.buildUI();
+            if (!this.isLoadingAssets) this.buildUI();
             return;
         }
 
@@ -147,13 +150,48 @@ export class GameScene implements Scene {
         this.fitForceLabel = null;
         this.celebrating = false;
         this.powerUpUsed = false;
+        this.loadingText = null;
 
         if (!this.level) return;
+
         this.timeRemaining = this.level.timeLimit;
 
-        this.buildLayout();
-        this.buildPieces();
-        this.buildUI();
+        if (this.level.piecesFolder) {
+            this.isLoadingAssets = true;
+            this.showLoadingScreen();
+
+            const urlsToLoad: Record<string, string> = {};
+            const folder = this.level.piecesFolder.replace(/\/$/, '');
+            const baseUrl = import.meta.env.BASE_URL;
+            for (let r = 0; r < this.level.rows; r++) {
+                for (let c = 0; c < this.level.cols; c++) {
+                    const key = `lvl${this.level.id}_piece_${r}_${c}`;
+                    urlsToLoad[key] = `${baseUrl}${folder}/piece_${r}_${c}.png`;
+                }
+            }
+
+            this.assetManager.loadExtraImages(urlsToLoad).then(() => {
+                this.isLoadingAssets = false;
+                this.buildLayout();
+                this.buildPieces();
+                this.buildUI();
+            });
+        } else {
+            this.isLoadingAssets = false;
+            this.buildLayout();
+            this.buildPieces();
+            this.buildUI();
+        }
+    }
+
+    private showLoadingScreen(): void {
+        this.ui.clear();
+        this.loadingText = new Label({
+            x: 0, y: this.canvasH / 2 - 20, width: this.canvasW, height: 40,
+            text: 'Loading Level Assets...',
+            fontSize: 24, color: '#a5b4fc', bold: true
+        });
+        this.ui.addElement(this.loadingText);
     }
 
     private getLayout(): OrientationLayout {
@@ -249,7 +287,11 @@ export class GameScene implements Scene {
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
                 positions.push({ c, r });
-                this.pieces.push(this.createPiece(id++, c, r, cols, rows, imgW, imgH));
+                const piece = this.createPiece(id++, c, r, cols, rows, imgW, imgH);
+                if (this.level.piecesFolder) {
+                    piece.imageKey = `lvl${this.level.id}_piece_${r}_${c}`;
+                }
+                this.pieces.push(piece);
             }
         }
 
@@ -520,6 +562,8 @@ export class GameScene implements Scene {
     update(dt: number): void {
         this.ui.update(dt);
 
+        if (this.isLoadingAssets) return;
+
         if (this.celebrating) {
             this.celebrationTimer += dt;
             this.celebrationAlpha = Math.min(1, this.celebrationTimer * 2);
@@ -578,6 +622,13 @@ export class GameScene implements Scene {
     render(ctx: CanvasRenderingContext2D): void {
         const w = ctx.canvas.width;
         const h = ctx.canvas.height;
+
+        if (this.isLoadingAssets) {
+            ctx.fillStyle = '#111827';
+            ctx.fillRect(0, 0, w, h);
+            this.ui.render(ctx);
+            return;
+        }
 
         const grad = ctx.createLinearGradient(0, 0, 0, h);
         grad.addColorStop(0, '#fef3e2');
@@ -718,7 +769,36 @@ export class GameScene implements Scene {
             ctx.filter = `grayscale(${grayscale * 100}%) brightness(${100 - (grayscale * 50)}%)`;
         }
 
-        if (image) {
+        if (piece.imageKey) {
+            const indImg = this.assetManager.getImage(piece.imageKey);
+            if (indImg) {
+                // Determine padding scale to center theoretical cell_size logic inside the unified bounds
+                // indImg is square (final_w x final_h). It contains the piece + padding matching the BBOX logic in cutter.
+                // The true visually centered scale for the bounding rect vs cell rect:
+                // cell_size is visually the theoretical grid. So drawing indImg over it means we stretch its physical pixel width
+                // to a canvas scaling ratio: (cellSize / cell_w_pixels)
+                // But we actually only have indImg, we don't have the original cell_w_pixels.
+                // Wait, if cutter pads evenly so cell is dead-center, drawing indImg centered on piece.x+piece.width/2 
+                // scaled appropriately will work exactly perfect.
+                // Because if the mask was generated from "X columns over grid", then ratio = piece.width / cell_w_pixels.
+                // Let's deduce ratio assuming the image has a base padding. We scaled original puzzle image down by cols.
+                // It's much simpler: puzzle piece image is relative. Let's draw it spanning larger than width.
+                const imgAspect = indImg.width / indImg.height;
+                const cellRefImage = this.assetManager.getImage(this.level!.image);
+                let drawRatio = 1;
+                if (cellRefImage) {
+                    const originalCellPxW = cellRefImage.width / this.level!.cols;
+                    drawRatio = indImg.width / originalCellPxW;
+                }
+
+                const drawW = piece.width * drawRatio;
+                const drawH = piece.height * drawRatio;
+                const offX = (drawW - piece.width) / 2;
+                const offY = (drawH - piece.height) / 2;
+
+                ctx.drawImage(indImg, piece.x - offX, piece.y - offY, drawW, drawH);
+            }
+        } else if (image) {
             ctx.drawImage(image, piece.sx, piece.sy, piece.sw, piece.sh, piece.x, piece.y, piece.width, piece.height);
         } else {
             const hue = (piece.id * 47) % 360;
@@ -784,12 +864,35 @@ export class GameScene implements Scene {
             ctx.save();
             ctx.shadowColor = 'rgba(0,0,0,0.3)'; ctx.shadowBlur = 20; ctx.shadowOffsetY = 10;
 
-            // Draw each piece in its final (possibly FitForce-modified) position
-            for (const piece of this.pieces) {
-                const destX = originX + piece.col * cellDraw;
-                const destY = originY + piece.row * cellDraw;
-                ctx.drawImage(image, piece.sx, piece.sy, piece.sw, piece.sh, destX, destY, cellDraw, cellDraw);
+            if (this.level.piecesFolder) {
+                // Dibuja PNGs disgregados de cada pieza en su grilla final calculada con ratio de padding.
+                const cellRefImage = image;
+                const originalCellPxW = cellRefImage.width / this.level!.cols;
+
+                for (const piece of this.pieces) {
+                    if (piece.imageKey) {
+                        const indImg = this.assetManager.getImage(piece.imageKey);
+                        if (indImg) {
+                            const drawRatio = indImg.width / originalCellPxW;
+                            const drawW = cellDraw * drawRatio;
+                            const drawH = cellDraw * drawRatio;
+                            const destX = originX + piece.col * cellDraw;
+                            const destY = originY + piece.row * cellDraw;
+                            const offX = (drawW - cellDraw) / 2;
+                            const offY = (drawH - cellDraw) / 2;
+                            ctx.drawImage(indImg, destX - offX, destY - offY, drawW, drawH);
+                        }
+                    }
+                }
+            } else {
+                // Dibuja recortando de img fuente (lógica clásica legacy)
+                for (const piece of this.pieces) {
+                    const destX = originX + piece.col * cellDraw;
+                    const destY = originY + piece.row * cellDraw;
+                    ctx.drawImage(image, piece.sx, piece.sy, piece.sw, piece.sh, destX, destY, cellDraw, cellDraw);
+                }
             }
+
             ctx.restore();
         }
 

@@ -28,8 +28,21 @@ export class AssetManager {
         await Promise.all([...imgPromises, ...sndPromises]);
     }
 
-    private loadImage(key: string, url: string): Promise<void> {
+    async loadExtraImages(imageMap: Record<string, string>): Promise<void> {
+        const imgEntries = Object.entries(imageMap || {});
+        // Accumulate progress
+        this.totalAssets += imgEntries.length;
+        const imgPromises = imgEntries.map(([key, url]) => this.loadImage(key, url, true));
+        await Promise.all(imgPromises);
+    }
+
+    public loadImage(key: string, url: string, ignoreIfLoaded = false): Promise<void> {
         return new Promise((resolve) => {
+            if (ignoreIfLoaded && this.images.has(key)) {
+                this.loadedAssets++;
+                resolve();
+                return;
+            }
             const img = new Image();
             img.onload = () => {
                 this.images.set(key, img);

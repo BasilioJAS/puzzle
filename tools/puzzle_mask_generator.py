@@ -149,10 +149,10 @@ def generate_masks(cols: int, rows: int, cell_size: int, output_dir: str, seed: 
             v_tabs[(r, c)] = rng.choice([-1, 1])  # borde entre col c y c+1
 
     def get_tabs(r, c):
-        top    = 0 if r == 0          else -h_tabs[(r-1, c)]  # inverso del bottom del de arriba
-        bottom = 0 if r == rows - 1   else  h_tabs[(r,   c)]
-        left   = 0 if c == 0          else -v_tabs[(r, c-1)]  # inverso del right del de la izq
-        right  = 0 if c == cols - 1   else  v_tabs[(r,   c)]
+        top    = 0 if r == 0          else h_tabs[(r-1, c)]  # mismo valor que el bottom del de arriba
+        bottom = 0 if r == rows - 1   else h_tabs[(r,   c)]
+        left   = 0 if c == 0          else v_tabs[(r, c-1)]  # mismo valor que el right del de la izq
+        right  = 0 if c == cols - 1   else v_tabs[(r,   c)]
         return (top, right, bottom, left)
 
     tabs = [[get_tabs(r, c) for c in range(cols)] for r in range(rows)]

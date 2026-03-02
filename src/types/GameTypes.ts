@@ -57,6 +57,7 @@ export interface LevelConfig {
     image: string;
     cols: number;
     rows: number;
+    piecesFolder?: string;
 }
 
 export interface ShopItem {
@@ -118,6 +119,7 @@ export interface PuzzlePiece {
     sy: number; // source y in the image
     sw: number; // source width
     sh: number; // source height
+    imageKey?: string; // Optional: Si tiene esta key, usamos un asset cargado y se ignora el sx/sy/sw/sh del grid
     // Animation fields
     animScale: number;
     animScaleTarget: number;

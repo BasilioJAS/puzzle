@@ -57,40 +57,133 @@ def cut_pieces(image_path: str, masks_dir: str, output_dir: str) -> None:
 
     print(f"Procesando {len(mask_files)} máscaras → {out_path.resolve()}\n")
 
-    generated = 0
+    import re
+
+    # Determinar tamaño de la grilla (max filas y columnas basados en nombres de archivo)
+    max_r, max_c = 0, 0
+    parsed_masks = []
+    
+    # Patrón: detecta numbers en `piece_0_1.png`
+    pattern = re.compile(r'_(\d+)_(\d+)')
+    
     for mask_file in mask_files:
-        mask_img = Image.open(mask_file).convert("L")  # escala de grises
+        match = pattern.search(mask_file.name)
+        if match:
+            r, c = int(match.group(1)), int(match.group(2))
+            max_r = max(max_r, r)
+            max_c = max(max_c, c)
+            parsed_masks.append((mask_file, r, c))
+        else:
+            print(f"  [!] Saltando {mask_file.name}: no sigue el formato piece_R_C")
+            continue
+            
+    if not parsed_masks:
+        print("No se encontraron archivos con el formato: piece_<fila>_<columna>.png")
+        return
 
-        # Redimensionar máscara si no coincide con la imagen fuente
+    cols = max_c + 1
+    rows = max_r + 1
+    
+    # Calculamos el tamaño de celda base partiendo del tamaño de la imagen puente y la grilla
+    # Asumimos que la imagen fuente representa el puzzle completo
+    cell_w = src_w // cols
+    cell_h = src_h // rows
+
+    # Encontrar el bounding box MÁXIMO (cuánto sobresale cualquier pestaña en cualquier dirección)
+    # para crear un tamaño de textura uniforme centrado.
+    max_pad_top = 0
+    max_pad_bottom = 0
+    max_pad_left = 0
+    max_pad_right = 0
+
+    print("Calculando dimensiones uniformes de piezas...")
+    for mask_file, r, c in parsed_masks:
+        mask_img = Image.open(mask_file).convert("L")
         if mask_img.size != (src_w, src_h):
-            print(f"  [!] Redimensionando {mask_file.name}: {mask_img.size} → {(src_w, src_h)}")
             mask_img = mask_img.resize((src_w, src_h), Image.LANCZOS)
-
         mask_arr = np.array(mask_img)
 
-        # Calcular bounding box de los píxeles visibles de la máscara
         rows_with_content = np.any(mask_arr > 10, axis=1)
         cols_with_content = np.any(mask_arr > 10, axis=0)
 
-        if not rows_with_content.any():
-            print(f"  [!] Saltando {mask_file.name} — máscara vacía")
-            continue
+        if not rows_with_content.any(): continue
 
-        r_min, r_max = np.where(rows_with_content)[0][[0, -1]]
-        c_min, c_max = np.where(cols_with_content)[0][[0, -1]]
+        rmin_mask, rmax_mask = np.where(rows_with_content)[0][[0, -1]]
+        cmin_mask, cmax_mask = np.where(cols_with_content)[0][[0, -1]]
 
-        # Recortar imagen fuente y máscara al bounding box
-        piece_arr = src_arr[r_min:r_max + 1, c_min:c_max + 1].copy()
-        alpha_crop = mask_arr[r_min:r_max + 1, c_min:c_max + 1]
+        # Celda teórica de esta pieza:
+        cell_y0 = r * cell_h
+        cell_x0 = c * cell_w
 
-        # Aplicar máscara como canal alpha
-        piece_arr[:, :, 3] = alpha_crop
+        # Cuánto sobresale de su celda teórica
+        pad_top = cell_y0 - rmin_mask
+        pad_bottom = rmax_mask - (cell_y0 + cell_h - 1)
+        pad_left = cell_x0 - cmin_mask
+        pad_right = cmax_mask - (cell_x0 + cell_w - 1)
 
-        piece_img = Image.fromarray(piece_arr, "RGBA")
+        max_pad_top = max(max_pad_top, pad_top)
+        max_pad_bottom = max(max_pad_bottom, pad_bottom)
+        max_pad_left = max(max_pad_left, pad_left)
+        max_pad_right = max(max_pad_right, pad_right)
+
+    # Para que el recorte de la pieza quede PERFECTAMENTE centrado alrededor de 
+    # la cuadrícula teórica, el padding izquierdo y derecho deben ser el mismo (el máximo)
+    # e igual en top y bottom.
+    pad_h = max(max_pad_left, max_pad_right)
+    pad_v = max(max_pad_top, max_pad_bottom)
+
+    # El tamaño final de TODA LAS PIEZAS será:
+    final_w = cell_w + pad_h * 2
+    final_h = cell_h + pad_v * 2
+
+    print(f"Dimensiones unificadas por pieza: {final_w}x{final_h}px (Padding V:{pad_v} H:{pad_h})")
+    print(f"Procesando {len(parsed_masks)} máscaras → {out_path.resolve()}\n")
+
+    generated = 0
+    for mask_file, r, c in parsed_masks:
+        mask_img = Image.open(mask_file).convert("L")
+        if mask_img.size != (src_w, src_h):
+            mask_img = mask_img.resize((src_w, src_h), Image.LANCZOS)
+        mask_arr = np.array(mask_img)
+        
+        # Crear un canvas RGBA transparente del tamaño unificado
+        piece_canvas = np.zeros((final_h, final_w, 4), dtype=np.uint8)
+
+        # Ubicación teórica de la celda en la imagen fuente
+        cell_y0 = r * cell_h
+        cell_x0 = c * cell_w
+
+        # Ubicación donde debemos "pegar" el recorte fuente en nuestro canvas unificado
+        # El origen X de la celda teórica en el canvas unificado es `pad_h`
+        # El origen Y es `pad_v`
+        
+        # Bounding box real de la máscara para esta pieza:
+        rows_with_content = np.any(mask_arr > 10, axis=1)
+        cols_with_content = np.any(mask_arr > 10, axis=0)
+        
+        if rows_with_content.any():
+            rmin_mask, rmax_mask = np.where(rows_with_content)[0][[0, -1]]
+            cmin_mask, cmax_mask = np.where(cols_with_content)[0][[0, -1]]
+            
+            # Recorte desde la imagen fuente y su máscara
+            crop_rgb = src_arr[rmin_mask:rmax_mask + 1, cmin_mask:cmax_mask + 1, :3]
+            crop_alpha = mask_arr[rmin_mask:rmax_mask + 1, cmin_mask:cmax_mask + 1]
+            
+            # En dónde se ubica este bbox dentro del canvas unificado?
+            # Su posición Y arranca en pad_v - (lo que sobresalió top)
+            offset_y = pad_v - (cell_y0 - rmin_mask)
+            offset_x = pad_h - (cell_x0 - cmin_mask)
+            
+            h_crop, w_crop = crop_alpha.shape
+            
+            piece_canvas[offset_y:offset_y+h_crop, offset_x:offset_x+w_crop, :3] = crop_rgb
+            piece_canvas[offset_y:offset_y+h_crop, offset_x:offset_x+w_crop, 3] = crop_alpha
+
+        piece_img = Image.fromarray(piece_canvas, "RGBA")
         out_file = out_path / f"{mask_file.stem}.png"
         piece_img.save(out_file, "PNG")
 
-        print(f"  ✓ {mask_file.name:<30s} → {out_file.name}  ({piece_img.width}×{piece_img.height} px)")
+        print(f"  ✓ {mask_file.name:<30s} → {out_file.name}  ({final_w}×{final_h} px)")
         generated += 1
 
     print(f"\n✅ Listo! {generated}/{len(mask_files)} piezas generadas en: {out_path.resolve()}")
