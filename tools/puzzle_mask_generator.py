@@ -77,26 +77,13 @@ def edge_points(ax, ay, bx, by, direction, n_curve=20):
 
     pts.append(pt(0.00, 0.00))
 
-    # Control points cuidadosamente afinados para un bulbo clásico de rompecabezas
-    # (x_a_lo_largo, y_perpendicular)
-
-    # 1. Base recta hasta el lado izquierdo del cuello
-    add_curve((0.00, 0.00), (0.14, 0.00), (0.28, 0.00), (0.43, 0.00))
-
-    # 2. Cuello izquierdo (se curva hacia arriba y hacia el centro)
-    add_curve((0.43, 0.00), (0.485, 0.00), (0.485, 0.15), (0.41, 0.15))
-
-    # 3. Mitad izquierda de la cabeza circular
-    add_curve((0.41, 0.15), (0.335, 0.15), (0.335, 0.30), (0.50, 0.30))
-
-    # 4. Mitad derecha de la cabeza circular
-    add_curve((0.50, 0.30), (0.665, 0.30), (0.665, 0.15), (0.59, 0.15))
-
-    # 5. Cuello derecho (vuelve hacia abajo y hacia la derecha)
-    add_curve((0.59, 0.15), (0.515, 0.15), (0.515, 0.00), (0.57, 0.00))
-
-    # 6. Base recta final
-    add_curve((0.57, 0.00), (0.71, 0.00), (0.85, 0.00), (1.00, 0.00))
+    # Control points visualmente generados (x_a_lo_largo, y_perpendicular)
+    add_curve((0.000, 0.000), (0.140, 0.000), (0.174, -0.001), (0.347, -0.001))
+    add_curve((0.347, -0.001), (0.394, 0.011), (0.407, 0.032), (0.360, 0.069))
+    add_curve((0.360, 0.069), (0.280, 0.097), (0.335, 0.300), (0.500, 0.295))
+    add_curve((0.500, 0.295), (0.665, 0.300), (0.720, 0.097), (0.640, 0.069))
+    add_curve((0.640, 0.069), (0.593, 0.032), (0.606, 0.011), (0.653, -0.001))
+    add_curve((0.653, -0.001), (0.826, -0.001), (0.860, 0.000), (1.000, 0.000))
 
     return pts
 
