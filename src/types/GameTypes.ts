@@ -95,12 +95,13 @@ export interface PlayerSave {
 }
 
 // ─── Pointer Event (unified mouse/touch) ───
-export type PointerEventType = 'down' | 'move' | 'up';
+export type PointerEventType = 'down' | 'move' | 'up' | 'wheel';
 
 export interface GamePointerEvent {
     x: number;
     y: number;
     type: PointerEventType;
+    nativeEvent?: MouseEvent | TouchEvent;
 }
 
 // ─── Puzzle Piece ───

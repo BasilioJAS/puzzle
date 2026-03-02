@@ -27,6 +27,9 @@ export class UIManager {
     }
 
     handlePointer(event: GamePointerEvent): boolean {
+        // Ignorar wheel actions para la UI en general (scroll de ScrollView se maneja ahí)
+        if (event.type === 'wheel') return false;
+
         // ScrollViews get priority
         for (const sv of this.scrollViews) {
             if (sv.handlePointer(event)) {

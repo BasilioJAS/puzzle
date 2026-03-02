@@ -56,6 +56,20 @@ export class GameScene implements Scene {
     private fitForceMode: boolean = false;
     private fitForceLabel: Label | null = null;
 
+    // Camera / Viewport State
+    public cameraX: number = 0;
+    public cameraY: number = 0;
+    public cameraZoom: number = 1.0;
+    private minZoom: number = 0.2;
+    private maxZoom: number = 3.0;
+
+    // Interaction State
+    private pinchStartDist: number = 0;
+    private pinchStartZoom: number = 1.0;
+    public isPanning: boolean = false;
+    private lastPanX: number = 0;
+    private lastPanY: number = 0;
+
     // Hint
     private hintPiece: PuzzlePiece | null = null;
     private hintTimer: number = 0;
@@ -153,6 +167,12 @@ export class GameScene implements Scene {
         this.loadingText = null;
 
         if (!this.level) return;
+
+        // Reset Camera
+        this.cameraZoom = 1.0;
+        this.cameraX = 0;
+        this.cameraY = 0;
+        this.isPanning = false;
 
         this.timeRemaining = this.level.timeLimit;
 
@@ -270,6 +290,20 @@ export class GameScene implements Scene {
             snapAnim: 0,
             prevX: 0,
             prevY: 0,
+        };
+    }
+
+    public screenToWorld(sx: number, sy: number): { x: number, y: number } {
+        return {
+            x: (sx - this.cameraX) / this.cameraZoom,
+            y: (sy - this.cameraY) / this.cameraZoom
+        };
+    }
+
+    public worldToScreen(wx: number, wy: number): { x: number, y: number } {
+        return {
+            x: wx * this.cameraZoom + this.cameraX,
+            y: wy * this.cameraZoom + this.cameraY
         };
     }
 
@@ -425,6 +459,34 @@ export class GameScene implements Scene {
             onClick: () => this.goToShop(),
         });
         this.ui.addElement(shopBtn);
+
+        // --- Camera Controls (Left side) ---
+        const camBtnSize = powerBtnSize;
+        const camBtnX = 10; // Left padding
+        const camStartY = puLayout.y + powerBtnSize + powerBtnGap; // Skip the spot opposite to 'Exit' for symmetry
+
+        const camButtons = [
+            { id: 'zoomIn', text: '➕', action: () => this.zoomCamera(1.2) },
+            { id: 'zoomOut', text: '➖', action: () => this.zoomCamera(1 / 1.2) },
+            { id: 'resetCam', text: '⌾', action: () => this.resetCamera() },
+        ];
+
+        camButtons.forEach((btnConfig, i) => {
+            const btn = new Button({
+                x: camBtnX,
+                y: camStartY + i * (camBtnSize + powerBtnGap),
+                width: camBtnSize,
+                height: camBtnSize,
+                text: btnConfig.text,
+                fontSize: 18,
+                bgColor: '#4a90d9',
+                bgColorHover: '#60a5fa',
+                bgColorPressed: '#3b82f6',
+                borderRadius: camBtnSize / 2,
+                onClick: btnConfig.action,
+            });
+            this.ui.addElement(btn);
+        });
     }
 
     private formatTime(seconds: number): string {
@@ -654,6 +716,10 @@ export class GameScene implements Scene {
         }
 
         if (!this.gameEnded && this.level) {
+            ctx.save();
+            ctx.translate(this.cameraX, this.cameraY);
+            ctx.scale(this.cameraZoom, this.cameraZoom);
+
             this.drawGrid(ctx);
 
             const sorted = [...this.pieces].sort((a, b) => {
@@ -680,6 +746,8 @@ export class GameScene implements Scene {
                 ctx.fillStyle = `rgba(236, 72, 153, ${pulse * 0.2})`; // Light pink overlay on grid
                 ctx.fillRect(this.gridX, this.gridY, this.gridW, this.gridH);
             }
+
+            ctx.restore();
         }
         this.ui.render(ctx);
     }
@@ -1084,7 +1152,7 @@ export class GameScene implements Scene {
     onPointer(event: GamePointerEvent): void {
         if (!this.level) return;
 
-        // UI gets first dibs (needed for popups/buttons during celebration/game over)
+        // UI gets first dibs
         if (this.ui.handlePointer(event)) return;
 
         if (this.celebrating && event.type === 'down') {
@@ -1094,70 +1162,175 @@ export class GameScene implements Scene {
 
         if (this.celebrating || this.gameEnded) return;
 
-        if (this.fitForceMode) {
-            if (event.type === 'down') {
-                for (let i = this.pieces.length - 1; i >= 0; i--) {
-                    const p = this.pieces[i];
-                    if (p.placed) continue;
-                    if (event.x >= p.x && event.x <= p.x + p.width && event.y >= p.y && event.y <= p.y + p.height) {
-                        this.applyFitForce(p);
-                        return;
-                    }
-                }
+        // Translate screen to world coordinates
+        const wPos = this.screenToWorld(event.x, event.y);
+
+        // --- Zooming ---
+        if (event.type === 'wheel' && event.nativeEvent instanceof WheelEvent) {
+            const zoomPoint = wPos;
+            const zoomAmount = event.nativeEvent.deltaY > 0 ? 0.9 : 1.1;
+            const newZoom = Math.max(this.minZoom, Math.min(this.maxZoom, this.cameraZoom * zoomAmount));
+
+            // Adjust camera position so the world point relative to screen stays the same
+            this.cameraX -= zoomPoint.x * (newZoom - this.cameraZoom);
+            this.cameraY -= zoomPoint.y * (newZoom - this.cameraZoom);
+            this.cameraZoom = newZoom;
+            return;
+        }
+
+        // --- Multi-touch Pinch to Zoom ---
+        if (event.nativeEvent && window.TouchEvent && event.nativeEvent instanceof TouchEvent && event.nativeEvent.touches.length === 2) {
+            const t1 = event.nativeEvent.touches[0];
+            const t2 = event.nativeEvent.touches[1];
+            const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+
+            if (event.type === 'down' || this.pinchStartDist === 0) {
+                this.pinchStartDist = dist;
+                this.pinchStartZoom = this.cameraZoom;
+            } else if (event.type === 'move') {
+                const scale = dist / this.pinchStartDist;
+                const newZoom = Math.max(this.minZoom, Math.min(this.maxZoom, this.pinchStartZoom * scale));
+
+                const midX = (t1.clientX + t2.clientX) / 2;
+                const midY = (t1.clientY + t2.clientY) / 2;
+                const pFocus = this.screenToWorld(midX, midY);
+
+                this.cameraX -= pFocus.x * (newZoom - this.cameraZoom);
+                this.cameraY -= pFocus.y * (newZoom - this.cameraZoom);
+                this.cameraZoom = newZoom;
+
+                this.pinchStartDist = dist;
+                this.pinchStartZoom = this.cameraZoom;
             }
             return;
         }
 
+        if (event.type === 'up') {
+            this.pinchStartDist = 0; // reset
+        }
+
+        // Pan trigger condition (Right Click, Middle Click, or touches ... )
+        const isRightOrMiddleClick = event.nativeEvent instanceof MouseEvent &&
+            (event.nativeEvent.button === 1 || event.nativeEvent.button === 2);
+
         if (event.type === 'down') {
+            if (isRightOrMiddleClick) {
+                this.isPanning = true;
+                this.lastPanX = event.x; // Panning is tracked in screen space!
+                this.lastPanY = event.y;
+                return;
+            }
+
+            if (this.fitForceMode) {
+                for (let i = this.pieces.length - 1; i >= 0; i--) {
+                    const p = this.pieces[i];
+                    if (p.placed) continue;
+                    if (wPos.x >= p.x && wPos.x <= p.x + p.width && wPos.y >= p.y && wPos.y <= p.y + p.height) {
+                        this.applyFitForce(p);
+                        return;
+                    }
+                }
+                return;
+            }
+
+            let clickedPiece = false;
             for (let i = this.pieces.length - 1; i >= 0; i--) {
                 const p = this.pieces[i]; if (p.placed) continue;
-                if (event.x >= p.x && event.x <= p.x + p.width && event.y >= p.y && event.y <= p.y + p.height) {
+                if (wPos.x >= p.x && wPos.x <= p.x + p.width && wPos.y >= p.y && wPos.y <= p.y + p.height) {
                     this.dragPiece = p; p.dragging = true; p.prevX = p.x; p.prevY = p.y;
-                    this.dragOffX = event.x - p.x; this.dragOffY = event.y - p.y;
+                    this.dragOffX = wPos.x - p.x; this.dragOffY = wPos.y - p.y;
                     this.dragFromGridCol = Math.round((p.prevX - this.gridX) / this.cellSize);
                     this.dragFromGridRow = Math.round((p.prevY - this.gridY) / this.cellSize);
                     p.width = this.cellSize; p.height = this.cellSize; p.animScale = 1.12; p.animScaleTarget = 1.05;
                     p.animOffsetY = 8; p.animRotation = (Math.random() - 0.5) * 0.05;
+                    clickedPiece = true;
                     break;
                 }
             }
-        } else if (event.type === 'move' && this.dragPiece) {
-            const p = this.dragPiece; const newX = event.x - this.dragOffX; const newY = event.y - this.dragOffY;
-            p.dragVelX = newX - p.x; p.dragVelY = newY - p.y; p.x = newX; p.y = newY;
-            p.animRotation = Math.max(-0.12, Math.min(0.12, p.dragVelX * 0.008));
-        } else if (event.type === 'up' && this.dragPiece) {
-            const p = this.dragPiece;
-            p.dragging = false;
-            p.animScaleTarget = 1;
-            p.animOffsetY = 0;
-            p.dragVelX = 0;
-            p.dragVelY = 0;
 
-            const cell = this.findGridCellAt(event.x, event.y);
-            if (cell) {
-                const locked = this.findLockedPieceOnCell(cell.col, cell.row);
-                if (locked) {
-                    // Cannot place on locked cell, return to start
-                    this.placePieceAt(p, this.dragFromGridCol, this.dragFromGridRow);
-                } else {
-                    const unlocked = this.findUnlockedPieceOnCell(cell.col, cell.row, p);
-                    if (unlocked) {
-                        // Swap: displaced goes to where dragged piece came from
-                        this.placePieceAt(unlocked, this.dragFromGridCol, this.dragFromGridRow);
-                    }
-                    // Place the dragged piece in new cell
-                    this.placePieceAt(p, cell.col, cell.row);
-                }
-            } else {
-                // Dropped outside grid — return to old position
-                this.placePieceAt(p, this.dragFromGridCol, this.dragFromGridRow);
+            // If we clicked on empty space (and not fitforce), start panning!
+            if (!clickedPiece) {
+                this.isPanning = true;
+                this.lastPanX = event.x;
+                this.lastPanY = event.y;
             }
 
-            this.dragFromGridCol = -1;
-            this.dragFromGridRow = -1;
-            this.dragPiece = null;
+        } else if (event.type === 'move') {
+            if (this.isPanning) {
+                this.cameraX += (event.x - this.lastPanX);
+                this.cameraY += (event.y - this.lastPanY);
+                this.lastPanX = event.x;
+                this.lastPanY = event.y;
+                return;
+            }
+
+            if (this.dragPiece) {
+                const p = this.dragPiece;
+                const newX = wPos.x - this.dragOffX;
+                const newY = wPos.y - this.dragOffY;
+                p.dragVelX = newX - p.x; p.dragVelY = newY - p.y;
+                p.x = newX; p.y = newY;
+                p.animRotation = Math.max(-0.12, Math.min(0.12, p.dragVelX * 0.008));
+            }
+        } else if (event.type === 'up') {
+            if (this.isPanning) {
+                this.isPanning = false;
+                return;
+            }
+
+            if (this.dragPiece) {
+                const p = this.dragPiece;
+                p.dragging = false;
+                p.animScaleTarget = 1;
+                p.animOffsetY = 0;
+                p.dragVelX = 0;
+                p.dragVelY = 0;
+
+                const cell = this.findGridCellAt(wPos.x, wPos.y);
+                if (cell) {
+                    const locked = this.findLockedPieceOnCell(cell.col, cell.row);
+                    if (locked) {
+                        this.placePieceAt(p, this.dragFromGridCol, this.dragFromGridRow);
+                    } else {
+                        const unlocked = this.findUnlockedPieceOnCell(cell.col, cell.row, p);
+                        if (unlocked) {
+                            this.placePieceAt(unlocked, this.dragFromGridCol, this.dragFromGridRow);
+                        }
+                        this.placePieceAt(p, cell.col, cell.row);
+                    }
+                } else {
+                    this.placePieceAt(p, this.dragFromGridCol, this.dragFromGridRow);
+                }
+
+                this.dragFromGridCol = -1;
+                this.dragFromGridRow = -1;
+                this.dragPiece = null;
+            }
         }
     }
 
     private getPieceById(id: number): PuzzlePiece { return this.pieces[id]; }
+
+    // --- Camera Control Methods ---
+    private zoomCamera(factor: number): void {
+        const w = this.canvasW;
+        const h = this.canvasH;
+
+        // Target center of screen
+        const midX = w / 2;
+        const midY = h / 2;
+        const pFocus = this.screenToWorld(midX, midY);
+
+        const newZoom = Math.max(this.minZoom, Math.min(this.maxZoom, this.cameraZoom * factor));
+
+        this.cameraX -= pFocus.x * (newZoom - this.cameraZoom);
+        this.cameraY -= pFocus.y * (newZoom - this.cameraZoom);
+        this.cameraZoom = newZoom;
+    }
+
+    private resetCamera(): void {
+        this.cameraZoom = 1.0;
+        this.cameraX = 0;
+        this.cameraY = 0;
+    }
 }

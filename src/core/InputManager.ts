@@ -27,8 +27,8 @@ export class InputManager {
         this.callbacks = [];
     }
 
-    private emit(x: number, y: number, type: PointerEventType): void {
-        const event: GamePointerEvent = { x, y, type };
+    private emit(x: number, y: number, type: PointerEventType | 'wheel', nativeEvent?: MouseEvent | TouchEvent | WheelEvent): void {
+        const event: GamePointerEvent = { x, y, type: type as PointerEventType, nativeEvent: nativeEvent as any };
         for (const cb of this.callbacks) {
             cb(event);
         }
@@ -46,32 +46,43 @@ export class InputManager {
         // Mouse events
         this.canvas.addEventListener('mousedown', (e: MouseEvent) => {
             const p = this.getPos(e);
-            this.emit(p.x, p.y, 'down');
+            this.emit(p.x, p.y, 'down', e);
         });
 
         this.canvas.addEventListener('mousemove', (e: MouseEvent) => {
             const p = this.getPos(e);
-            this.emit(p.x, p.y, 'move');
+            this.emit(p.x, p.y, 'move', e);
         });
 
         this.canvas.addEventListener('mouseup', (e: MouseEvent) => {
             const p = this.getPos(e);
-            this.emit(p.x, p.y, 'up');
+            this.emit(p.x, p.y, 'up', e);
         });
+
+        // Wheel (Zoom in Desktop)
+        this.canvas.addEventListener('wheel', (e: WheelEvent) => {
+            e.preventDefault();
+            const p = this.getPos(e);
+            this.emit(p.x, p.y, 'wheel', e);
+        }, { passive: false });
 
         // Touch events
         this.canvas.addEventListener('touchstart', (e: TouchEvent) => {
             e.preventDefault();
-            const t = e.touches[0];
-            const p = this.getPos(t);
-            this.emit(p.x, p.y, 'down');
+            if (e.touches.length > 0) {
+                const t = e.touches[0];
+                const p = this.getPos(t);
+                this.emit(p.x, p.y, 'down', e);
+            }
         }, { passive: false });
 
         this.canvas.addEventListener('touchmove', (e: TouchEvent) => {
             e.preventDefault();
-            const t = e.touches[0];
-            const p = this.getPos(t);
-            this.emit(p.x, p.y, 'move');
+            if (e.touches.length > 0) {
+                const t = e.touches[0];
+                const p = this.getPos(t);
+                this.emit(p.x, p.y, 'move', e);
+            }
         }, { passive: false });
 
         this.canvas.addEventListener('touchend', (e: TouchEvent) => {
@@ -79,7 +90,7 @@ export class InputManager {
             if (e.changedTouches.length > 0) {
                 const t = e.changedTouches[0];
                 const p = this.getPos(t);
-                this.emit(p.x, p.y, 'up');
+                this.emit(p.x, p.y, 'up', e);
             }
         }, { passive: false });
     }
