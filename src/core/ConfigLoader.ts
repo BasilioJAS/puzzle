@@ -4,11 +4,30 @@ export class ConfigLoader {
     private config: GameConfig | null = null;
 
     async load(url: string): Promise<GameConfig> {
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`Failed to load config: ${response.statusText}`);
+        const baseUrl = import.meta.env.BASE_URL;
+
+        const [configRes, curveRes] = await Promise.all([
+            fetch(url),
+            fetch(`${baseUrl}assets/levels_curve.json`).catch(() => null)
+        ]);
+
+        if (!configRes.ok) {
+            throw new Error(`Failed to load config: ${configRes.statusText}`);
         }
-        this.config = await response.json() as GameConfig;
+
+        this.config = await configRes.json() as GameConfig;
+
+        if (curveRes && curveRes.ok) {
+            try {
+                const curveData = await curveRes.json();
+                if (Array.isArray(curveData)) {
+                    this.config.levels = curveData;
+                }
+            } catch (e) {
+                console.warn("Could not parse levels_curve.json", e);
+            }
+        }
+
         return this.config;
     }
 
