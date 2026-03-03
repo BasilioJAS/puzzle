@@ -132,6 +132,8 @@ export interface PuzzlePiece {
     snapAnim: number; // 0-1 for snap bounce
     prevX: number;
     prevY: number;
+    isFitForced?: boolean;
+    fitForceRotation?: number;
 }
 
 // ─── Scene Interface ───

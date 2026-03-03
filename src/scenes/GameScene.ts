@@ -729,7 +729,21 @@ export class GameScene implements Scene {
                 return 0;
             });
 
-            for (const piece of sorted) this.drawPiece(ctx, piece);
+            for (const piece of sorted) {
+                this.drawPiece(ctx, piece);
+            }
+
+            // Draw fit-forced sticky tapes OVER all pieces to prevent overlap occlusion
+            for (let i = 0; i < sorted.length; i++) {
+                const piece = sorted[i];
+                if (piece.isFitForced) {
+                    const cx = piece.x + piece.width / 2;
+                    const cy = piece.y + piece.height / 2;
+                    const rotation = piece.fitForceRotation || 0;
+                    const liftY = piece.animOffsetY;
+                    this.drawStickyTape(ctx, cx, cy - liftY, piece.width, piece.height, rotation);
+                }
+            }
 
             if (this.hintPiece && this.hintTimer > 0) {
                 const alpha = 0.3 + 0.3 * Math.sin(this.elapsed * 6);
@@ -808,7 +822,7 @@ export class GameScene implements Scene {
         const cx = piece.x + piece.width / 2;
         const cy = piece.y + piece.height / 2;
         const scale = piece.animScale;
-        const rotation = piece.animRotation;
+        const rotation = piece.isFitForced ? (piece.fitForceRotation || 0) : piece.animRotation;
         const liftY = piece.animOffsetY;
 
         ctx.translate(cx, cy - liftY);
@@ -911,6 +925,82 @@ export class GameScene implements Scene {
         return true;
     }
 
+    private drawStickyTape(ctx: CanvasRenderingContext2D, cx: number, cy: number, pWidth: number, pHeight: number, rotation: number): void {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(rotation);
+
+        const bandAidColor = 'rgba(238, 203, 165, 0.9)'; // Band-aid skin-like color
+        const padColor = 'rgba(215, 175, 140, 0.95)'; // Center pad color
+        const heartColor = 'rgba(255, 105, 180, 0.95)'; // Pink hearts
+
+        ctx.shadowColor = 'rgba(0,0,0,0.3)';
+        ctx.shadowBlur = 6;
+        ctx.shadowOffsetY = 3;
+
+        const tw = pWidth * 1.5; // Longer band-aid
+        const th = pHeight * 0.25; // Thicker height
+
+        const drawSingleBandAid = () => {
+            const tx = -tw / 2;
+            const ty = -th / 2;
+
+            // Rounded rectangle path for the band-aid strip
+            ctx.beginPath();
+            ctx.roundRect(tx, ty, tw, th, th / 2); // Pill shape
+            ctx.fillStyle = bandAidColor;
+            ctx.fill();
+
+            // Draw center pad
+            ctx.beginPath();
+            const padW = tw * 0.25;
+            ctx.roundRect(-padW / 2, ty + 2, padW, th - 4, 3);
+            ctx.fillStyle = padColor;
+            ctx.fill();
+
+            // Draw subtle dotted ventilation holes
+            ctx.fillStyle = 'rgba(180, 140, 110, 0.5)';
+            for (let dx = -1; dx <= 1; dx += 2) {
+                for (let oy = -th / 4; oy <= th / 4; oy += th / 4) {
+                    ctx.beginPath();
+                    ctx.arc(dx * (tw * 0.3), oy, 1.5, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.arc(dx * (tw * 0.4), oy, 1.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        };
+
+        // Draw first band-aid (rotated 45 deg)
+        ctx.save();
+        ctx.rotate(Math.PI / 4);
+        drawSingleBandAid();
+        ctx.restore();
+
+        // Draw second band-aid crossing it (rotated -45 deg)
+        ctx.save();
+        ctx.rotate(-Math.PI / 4);
+        drawSingleBandAid();
+        ctx.restore();
+
+        // Draw hearts exactly in the center over the cross intersection
+        ctx.shadowColor = 'transparent';
+        ctx.fillStyle = heartColor;
+        ctx.font = `${th * 0.70}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        ctx.fillText('❤', 0, 0); // Center heart
+        // Adding smaller satellite hearts near center
+        ctx.font = `${th * 0.4}px sans-serif`;
+        ctx.fillText('❤', -tw * 0.12, -tw * 0.12);
+        ctx.fillText('❤', tw * 0.12, tw * 0.12);
+
+        ctx.restore();
+    }
+
     private renderCelebration(ctx: CanvasRenderingContext2D, w: number, h: number): void {
         ctx.fillStyle = `rgba(254, 243, 226, ${this.celebrationAlpha * 0.92})`;
         ctx.fillRect(0, 0, w, h);
@@ -948,7 +1038,16 @@ export class GameScene implements Scene {
                             const destY = originY + piece.row * cellDraw;
                             const offX = (drawW - cellDraw) / 2;
                             const offY = (drawH - cellDraw) / 2;
+                            const pcx = destX + cellDraw / 2;
+                            const pcy = destY + cellDraw / 2;
+
+                            ctx.save();
+                            ctx.translate(pcx, pcy);
+                            const finalRot = piece.isFitForced ? (piece.fitForceRotation || 0) : 0;
+                            ctx.rotate(finalRot);
+                            ctx.translate(-pcx, -pcy);
                             ctx.drawImage(indImg, destX - offX, destY - offY, drawW, drawH);
+                            ctx.restore();
                         }
                     }
                 }
@@ -957,7 +1056,27 @@ export class GameScene implements Scene {
                 for (const piece of this.pieces) {
                     const destX = originX + piece.col * cellDraw;
                     const destY = originY + piece.row * cellDraw;
+                    const pcx = destX + cellDraw / 2;
+                    const pcy = destY + cellDraw / 2;
+
+                    ctx.save();
+                    ctx.translate(pcx, pcy);
+                    const finalRot = piece.isFitForced ? (piece.fitForceRotation || 0) : 0;
+                    ctx.rotate(finalRot);
+                    ctx.translate(-pcx, -pcy);
                     ctx.drawImage(image, piece.sx, piece.sy, piece.sw, piece.sh, destX, destY, cellDraw, cellDraw);
+                    ctx.restore();
+                }
+            }
+
+            // Draw sticky tapes OVER all the board tiles in celebration too
+            for (const piece of this.pieces) {
+                if (piece.isFitForced) {
+                    const destX = originX + piece.col * cellDraw;
+                    const destY = originY + piece.row * cellDraw;
+                    const pcx = destX + cellDraw / 2;
+                    const pcy = destY + cellDraw / 2;
+                    this.drawStickyTape(ctx, pcx, pcy, cellDraw, cellDraw, piece.fitForceRotation || 0);
                 }
             }
 
@@ -1092,12 +1211,25 @@ export class GameScene implements Scene {
             displacedPiece.row = tempRow;
             displacedPiece.targetX = tempTargetX;
             displacedPiece.targetY = tempTargetY;
+            displacedPiece.placed = false;
         }
+
+        tappedPiece.isFitForced = true;
+        // Rotation between ~3 and 5 degrees, random direction
+        tappedPiece.fitForceRotation = (Math.random() > 0.5 ? 1 : -1) * (0.05 + Math.random() * 0.04);
 
         this.placePieceLocked(tappedPiece);
         this.powerUpUsed = true;
         this.saveManager.usePowerUp('fitForce');
         this.exitFitForceMode();
+
+        // Si la pieza que fue desplazada a un nuevo rol está justo geográficamente sobre él
+        // entonces debería encajar sola automáticamente y disparar el check de ganar.
+        if (displacedPiece && displacedPiece !== tappedPiece) {
+            const dCellCol = Math.round((displacedPiece.x - this.gridX) / this.cellSize);
+            const dCellRow = Math.round((displacedPiece.y - this.gridY) / this.cellSize);
+            this.placePieceAt(displacedPiece, dCellCol, dCellRow);
+        }
     }
 
     private endCelebration(): void {
