@@ -166,8 +166,27 @@ def cut_pieces(image_path: str, masks_dir: str, output_dir: str) -> None:
             cmin_mask, cmax_mask = np.where(cols_with_content)[0][[0, -1]]
             
             # Recorte desde la imagen fuente y su máscara
-            crop_rgb = src_arr[rmin_mask:rmax_mask + 1, cmin_mask:cmax_mask + 1, :3]
+            crop_rgb = src_arr[rmin_mask:rmax_mask + 1, cmin_mask:cmax_mask + 1, :3].copy()
             crop_alpha = mask_arr[rmin_mask:rmax_mask + 1, cmin_mask:cmax_mask + 1]
+            
+            # --- INNER DARK STROKE ---
+            from PIL import ImageFilter
+            c_mask_img = Image.fromarray(crop_alpha, "L")
+            # FIND_EDGES detects the boundaries of the mask
+            edge_img = c_mask_img.filter(ImageFilter.FIND_EDGES)
+            # Thicken the stroke slightly (5x5 kernel as requested)
+            edge_img = edge_img.filter(ImageFilter.MaxFilter(5))
+            
+            edge_arr = np.array(edge_img, dtype=np.float32)
+            # Factor de opacidad al 50%
+            edge_opacity = (edge_arr / 255.0) * 0.50
+            
+            # Oscurecer los The pixeles RGB The la the pieza The the the contorno The
+            for c_col in range(3):
+                crop_rgb[:, :, c_col] = (
+                    crop_rgb[:, :, c_col] * (1.0 - edge_opacity) + 30 * edge_opacity
+                ).astype(np.uint8)
+            # -------------------------
             
             # En dónde se ubica este bbox dentro del canvas unificado?
             # Su posición Y arranca en pad_v - (lo que sobresalió top)
