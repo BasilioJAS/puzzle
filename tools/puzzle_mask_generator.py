@@ -44,7 +44,7 @@ def cubic_bezier(p0, p1, p2, p3, n=25):
 
 # ── Edge shape ─────────────────────────────────────────────────────────────────
 
-def edge_points(ax, ay, bx, by, direction, n_curve=20):
+def edge_points(ax, ay, bx, by, direction, base_size=None, n_curve=20):
     """
     Genera puntos a lo largo de un borde de rompecabezas de (ax,ay) a (bx,by).
 
@@ -58,16 +58,35 @@ def edge_points(ax, ay, bx, by, direction, n_curve=20):
 
     dx, dy = bx - ax, by - ay
     length = math.hypot(dx, dy)
+    
+    if base_size is None:
+        base_size = length
 
     # Vectores unitarios: tangente y normal
     tx, ty = dx / length, dy / length
     nx, ny = -ty, tx  # normal: 90° CCW respecto a la dirección de avance
 
     def pt(along, perp):
-        """Convierte xy relativos (0 a 1) a absolutos en pantalla"""
-        a = length * along
-        p = length * perp * direction
-        return [ax + tx*a + nx*p, ay + ty*a + ny*p]
+        """Convierte xy relativos (0 a 1) a absolutos en pantalla adaptando al tamaño base de la pestaña"""
+        # La forma original asume un cuadrado de tamaño base_size. 
+        # Si la arista es más larga, mantenemos el tamaño del enganche fijo en base_size,
+        # y simplemente elongamos el tramo inicial y final (la parte recta) para llenar el hueco.
+        
+        # El enganche en el diseño bezier original arranca en > 0.347 y termina en < 0.653
+        # offset_center_px será la posición real en X de la forma
+        if along <= 0.347:
+            # Tramo izquierdo estirado para cubrir la longitud real
+            real_along = (along / 0.347) * (length / 2 - 0.153 * base_size)
+        elif along < 0.653:
+            # Tramo del enganche en sí (con su tamaño exacto base_size)
+            real_along = length / 2 + (along - 0.5) * base_size
+        else:
+            # Tramo derecho estirado para cubrir el resto
+            start_px = length / 2 + 0.153 * base_size
+            real_along = start_px + ((along - 0.653) / (1.0 - 0.653)) * (length - start_px)
+
+        real_perp = perp * base_size * direction
+        return [ax + tx * real_along + nx * real_perp, ay + ty * real_along + ny * real_perp]
 
     pts = []
     def add_curve(p0, p1, p2, p3):
@@ -106,19 +125,21 @@ def piece_polygon(col, row, cols, rows, cell_w, cell_h, tabs, margin=0):
 
     pts = []
 
+    base_size = min(cell_w, cell_h)
+
     # Top: izquierda → derecha (pestaña sube = dirección -1 en coordenadas de pantalla)
     # La normal "izquierda" del vector (x0,y0)→(x1,y0) apunta hacia ARRIBA (y negativo)
     # Por convención usamos: +1 = pestaña hacia arriba (y negativo) en borde top
-    pts += edge_points(x0, y0, x1, y0,  -top)
+    pts += edge_points(x0, y0, x1, y0,  -top, base_size)
 
     # Right: arriba → abajo; normal apunta a la derecha
-    pts += edge_points(x1, y0, x1, y1,  right)[1:]
+    pts += edge_points(x1, y0, x1, y1,  right, base_size)[1:]
 
     # Bottom: derecha → izquierda; normal apunta hacia abajo
-    pts += edge_points(x1, y1, x0, y1,  bottom)[1:]
+    pts += edge_points(x1, y1, x0, y1,  bottom, base_size)[1:]
 
     # Left: abajo → arriba; normal apunta a la izquierda
-    pts += edge_points(x0, y1, x0, y0,  -left)[1:]
+    pts += edge_points(x0, y1, x0, y0,  -left, base_size)[1:]
 
     return [(round(p[0]), round(p[1])) for p in pts]
 
