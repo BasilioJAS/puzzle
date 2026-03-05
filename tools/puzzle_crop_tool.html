@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puzzle Crop Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #1a1a2e;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: #16213e;
+            border-right: 1px solid #0f3460;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 16px;
+            border-bottom: 1px solid #0f3460;
+        }
+
+        .sidebar-header h1 {
+            font-size: 18px;
+            color: #e94560;
+            margin-bottom: 4px;
+        }
+
+        .sidebar-header p {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .level-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .level-item {
+            padding: 10px 12px;
+            margin-bottom: 4px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #1a1a2e;
+            border: 1px solid transparent;
+            transition: all 0.15s;
+        }
+
+        .level-item:hover {
+            border-color: #0f3460;
+            background: #1e2a4a;
+        }
+
+        .level-item.active {
+            border-color: #e94560;
+            background: #2a1a3e;
+        }
+
+        .level-item.has-crop {
+            border-left: 3px solid #4ade80;
+        }
+
+        .level-item .id {
+            font-weight: bold;
+            color: #e94560;
+        }
+
+        .level-item .info {
+            font-size: 11px;
+            color: #888;
+        }
+
+        .sidebar-footer {
+            padding: 12px;
+            border-top: 1px solid #0f3460;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            transition: all 0.15s;
+        }
+
+        .btn-save {
+            background: #4ade80;
+            color: #1a1a2e;
+        }
+
+        .btn-save:hover {
+            background: #22c55e;
+        }
+
+        .btn-load {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-load:hover {
+            background: #2563eb;
+        }
+
+        .btn-reset {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background: #dc2626;
+        }
+
+        .btn-folder {
+            background: #f59e0b;
+            color: #1a1a2e;
+        }
+
+        .btn-folder:hover {
+            background: #d97706;
+        }
+
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .toolbar {
+            padding: 10px 16px;
+            background: #16213e;
+            border-bottom: 1px solid #0f3460;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 13px;
+        }
+
+        .toolbar .label {
+            color: #888;
+        }
+
+        .toolbar .value {
+            color: #e94560;
+            font-weight: bold;
+        }
+
+        .canvas-wrap {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background: #111;
+            position: relative;
+        }
+
+        canvas {
+            cursor: crosshair;
+        }
+
+        .info-bar {
+            padding: 8px 16px;
+            background: #16213e;
+            border-top: 1px solid #0f3460;
+            font-size: 12px;
+            color: #888;
+            display: flex;
+            gap: 20px;
+        }
+
+        .drop-zone {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(233, 69, 96, 0.1);
+            border: 3px dashed #e94560;
+            z-index: 10;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .drop-zone.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .drop-zone span {
+            font-size: 20px;
+            color: #e94560;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>🧩 Puzzle Crop Tool</h1>
+            <p>Selecciona un nivel y ajusta la zona de recorte</p>
+        </div>
+        <div class="level-list" id="levelList"></div>
+        <div class="sidebar-footer">
+            <button class="btn btn-folder" id="btnLoadLevels" style="background:#5b21b6;color:white">⚙️ Cargar
+                levels_curve.json</button>
+            <button class="btn btn-folder" id="btnSelectFolder">📁 Seleccionar carpeta de imágenes</button>
+            <button class="btn btn-save" id="btnSave">💾 Guardar puzzle_crops.json</button>
+            <button class="btn btn-load" id="btnLoad">📂 Cargar puzzle_crops.json</button>
+            <button class="btn btn-reset" id="btnReset">🗑️ Reset Crop Actual</button>
+        </div>
+    </div>
+    <div class="main">
+        <div class="toolbar">
+            <span class="label">Nivel:</span><span class="value" id="tbLevel">-</span>
+            <span class="label">Grid:</span><span class="value" id="tbGrid">-</span>
+            <span class="label">Imagen:</span><span class="value" id="tbImg">-</span>
+            <span class="label">Crop:</span><span class="value" id="tbCrop">-</span>
+        </div>
+        <div class="canvas-wrap" id="canvasWrap">
+            <canvas id="canvas"></canvas>
+        </div>
+        <div class="info-bar">
+            <span>Click+Drag = mover crop | Esquinas = redimensionar | Scroll = zoom | Click fuera del crop = panear
+                vista</span>
+        </div>
+    </div>
+
+    <script>
+        // ══════════════════════════════════════════════════════════════════════════
+        // EMBEDDED LEVELS DATA (from levels_curve.json) — no fetch needed!
+        // ══════════════════════════════════════════════════════════════════════════
+        const LEVELS_DATA = [{ "id": 1, "timeLimit": 60, "cols": 2, "rows": 2 }, { "id": 2, "timeLimit": 60, "cols": 2, "rows": 2 }, { "id": 3, "timeLimit": 60, "cols": 2, "rows": 2 }, { "id": 4, "timeLimit": 59, "cols": 2, "rows": 2 }, { "id": 5, "timeLimit": 59, "cols": 2, "rows": 2 }, { "id": 6, "timeLimit": 58, "cols": 2, "rows": 2 }, { "id": 7, "timeLimit": 58, "cols": 2, "rows": 2 }, { "id": 8, "timeLimit": 57, "cols": 2, "rows": 2 }, { "id": 9, "timeLimit": 57, "cols": 2, "rows": 2 }, { "id": 10, "timeLimit": 56, "cols": 2, "rows": 2 }, { "id": 11, "timeLimit": 56, "cols": 2, "rows": 2 }, { "id": 12, "timeLimit": 55, "cols": 2, "rows": 2 }, { "id": 13, "timeLimit": 55, "cols": 2, "rows": 2 }, { "id": 14, "timeLimit": 54, "cols": 2, "rows": 2 }, { "id": 15, "timeLimit": 54, "cols": 2, "rows": 2 }, { "id": 16, "timeLimit": 53, "cols": 2, "rows": 2 }, { "id": 17, "timeLimit": 53, "cols": 2, "rows": 2 }, { "id": 18, "timeLimit": 52, "cols": 2, "rows": 2 }, { "id": 19, "timeLimit": 52, "cols": 2, "rows": 2 }, { "id": 20, "timeLimit": 52, "cols": 2, "rows": 2 }, { "id": 21, "timeLimit": 51, "cols": 2, "rows": 2 }, { "id": 22, "timeLimit": 51, "cols": 2, "rows": 2 }, { "id": 23, "timeLimit": 75, "cols": 3, "rows": 2 }, { "id": 24, "timeLimit": 74, "cols": 3, "rows": 2 }, { "id": 25, "timeLimit": 74, "cols": 3, "rows": 2 }, { "id": 26, "timeLimit": 73, "cols": 3, "rows": 2 }, { "id": 27, "timeLimit": 72, "cols": 3, "rows": 2 }, { "id": 28, "timeLimit": 71, "cols": 3, "rows": 2 }, { "id": 29, "timeLimit": 71, "cols": 3, "rows": 2 }, { "id": 30, "timeLimit": 70, "cols": 3, "rows": 2 }, { "id": 31, "timeLimit": 69, "cols": 3, "rows": 2 }, { "id": 32, "timeLimit": 69, "cols": 3, "rows": 2 }, { "id": 33, "timeLimit": 68, "cols": 3, "rows": 2 }, { "id": 34, "timeLimit": 67, "cols": 3, "rows": 2 }, { "id": 35, "timeLimit": 66, "cols": 3, "rows": 2 }, { "id": 36, "timeLimit": 87, "cols": 4, "rows": 2 }, { "id": 37, "timeLimit": 86, "cols": 4, "rows": 2 }, { "id": 38, "timeLimit": 85, "cols": 4, "rows": 2 }, { "id": 39, "timeLimit": 85, "cols": 4, "rows": 2 }, { "id": 40, "timeLimit": 84, "cols": 4, "rows": 2 }, { "id": 41, "timeLimit": 83, "cols": 4, "rows": 2 }, { "id": 42, "timeLimit": 92, "cols": 3, "rows": 3 }, { "id": 43, "timeLimit": 91, "cols": 3, "rows": 3 }, { "id": 44, "timeLimit": 90, "cols": 3, "rows": 3 }, { "id": 45, "timeLimit": 89, "cols": 3, "rows": 3 }, { "id": 46, "timeLimit": 97, "cols": 5, "rows": 2 }, { "id": 47, "timeLimit": 96, "cols": 5, "rows": 2 }, { "id": 48, "timeLimit": 95, "cols": 5, "rows": 2 }, { "id": 49, "timeLimit": 94, "cols": 5, "rows": 2 }, { "id": 50, "timeLimit": 92, "cols": 5, "rows": 2 }, { "id": 51, "timeLimit": 109, "cols": 4, "rows": 3 }, { "id": 52, "timeLimit": 108, "cols": 4, "rows": 3 }, { "id": 53, "timeLimit": 106, "cols": 4, "rows": 3 }, { "id": 54, "timeLimit": 105, "cols": 4, "rows": 3 }, { "id": 55, "timeLimit": 104, "cols": 4, "rows": 3 }, { "id": 56, "timeLimit": 102, "cols": 6, "rows": 2 }, { "id": 57, "timeLimit": 101, "cols": 6, "rows": 2 }, { "id": 58, "timeLimit": 99, "cols": 6, "rows": 2 }, { "id": 59, "timeLimit": 122, "cols": 5, "rows": 3 }, { "id": 60, "timeLimit": 120, "cols": 5, "rows": 3 }, { "id": 61, "timeLimit": 118, "cols": 5, "rows": 3 }, { "id": 62, "timeLimit": 117, "cols": 5, "rows": 3 }, { "id": 63, "timeLimit": 115, "cols": 5, "rows": 3 }, { "id": 64, "timeLimit": 120, "cols": 4, "rows": 4 }, { "id": 65, "timeLimit": 119, "cols": 4, "rows": 4 }, { "id": 66, "timeLimit": 117, "cols": 4, "rows": 4 }, { "id": 67, "timeLimit": 129, "cols": 6, "rows": 3 }, { "id": 68, "timeLimit": 127, "cols": 6, "rows": 3 }, { "id": 69, "timeLimit": 125, "cols": 6, "rows": 3 }, { "id": 70, "timeLimit": 122, "cols": 6, "rows": 3 }, { "id": 71, "timeLimit": 133, "cols": 5, "rows": 4 }, { "id": 72, "timeLimit": 131, "cols": 5, "rows": 4 }, { "id": 73, "timeLimit": 129, "cols": 5, "rows": 4 }, { "id": 74, "timeLimit": 132, "cols": 7, "rows": 3 }, { "id": 75, "timeLimit": 130, "cols": 7, "rows": 3 }, { "id": 76, "timeLimit": 127, "cols": 7, "rows": 3 }, { "id": 77, "timeLimit": 125, "cols": 7, "rows": 3 }, { "id": 78, "timeLimit": 139, "cols": 6, "rows": 4 }, { "id": 79, "timeLimit": 136, "cols": 6, "rows": 4 }, { "id": 80, "timeLimit": 134, "cols": 6, "rows": 4 }, { "id": 81, "timeLimit": 131, "cols": 6, "rows": 4 }, { "id": 82, "timeLimit": 133, "cols": 5, "rows": 5 }, { "id": 83, "timeLimit": 130, "cols": 5, "rows": 5 }, { "id": 84, "timeLimit": 127, "cols": 5, "rows": 5 }, { "id": 85, "timeLimit": 138, "cols": 7, "rows": 4 }, { "id": 86, "timeLimit": 135, "cols": 7, "rows": 4 }, { "id": 87, "timeLimit": 131, "cols": 7, "rows": 4 }, { "id": 88, "timeLimit": 128, "cols": 7, "rows": 4 }, { "id": 89, "timeLimit": 133, "cols": 6, "rows": 5 }, { "id": 90, "timeLimit": 129, "cols": 6, "rows": 5 }, { "id": 91, "timeLimit": 126, "cols": 6, "rows": 5 }, { "id": 92, "timeLimit": 130, "cols": 8, "rows": 4 }, { "id": 93, "timeLimit": 126, "cols": 8, "rows": 4 }, { "id": 94, "timeLimit": 122, "cols": 8, "rows": 4 }, { "id": 95, "timeLimit": 118, "cols": 8, "rows": 4 }, { "id": 96, "timeLimit": 124, "cols": 7, "rows": 5 }, { "id": 97, "timeLimit": 120, "cols": 7, "rows": 5 }, { "id": 98, "timeLimit": 118, "cols": 6, "rows": 6 }, { "id": 99, "timeLimit": 114, "cols": 9, "rows": 4 }, { "id": 100, "timeLimit": 108, "cols": 9, "rows": 4 }];
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        let levels = LEVELS_DATA;
+        let crops = {};
+        let currentLevel = null;
+        let currentImage = null;
+        let viewZoom = 1;
+        let viewX = 0, viewY = 0;
+
+        // Image cache: id -> objectURL
+        let imageCache = {};
+
+        // Crop rectangle (image pixel coords)
+        let cropRect = { x: 0, y: 0, w: 400, h: 400 };
+
+        // Interaction state
+        let dragging = null;
+        let dragStart = { x: 0, y: 0 };
+        let cropStart = { x: 0, y: 0, w: 0, h: 0 };
+        let isPanning = false;
+        let panStart = { x: 0, y: 0 };
+        let viewStart = { x: 0, y: 0 };
+
+        // ── LOAD LEVELS JSON MANUALLY ────────────────────────────────────────────
+        document.getElementById('btnLoadLevels').addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    try {
+                        const newLevels = JSON.parse(ev.target.result);
+                        if (Array.isArray(newLevels)) {
+                            levels = newLevels;
+                            renderLevelList();
+                            if (currentLevel) selectLevel(levels.find(l => l.id === currentLevel.id) || currentLevel);
+                            const btn = document.getElementById('btnLoadLevels');
+                            btn.textContent = '✅ Levels Cargados';
+                            setTimeout(() => { btn.textContent = '⚙️ Cargar levels_curve.json'; }, 3000);
+                        }
+                    } catch (err) { alert('Error: ' + err.message); }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        });
+
+        // ── FOLDER LOADING ───────────────────────────────────────────────────────
+        // Uses the modern File System Access API to load a folder of images
+        document.getElementById('btnSelectFolder').addEventListener('click', async () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.multiple = true;
+            input.accept = 'image/png,image/jpg,image/jpeg';
+            // webkitdirectory allows selecting a folder
+            input.webkitdirectory = true;
+
+            input.onchange = (e) => {
+                const files = Array.from(e.target.files);
+                let count = 0;
+                for (const file of files) {
+                    // Extract the numeric ID from filename (e.g., "1.png" -> 1)
+                    const match = file.name.match(/^(\d+)\.(png|jpg|jpeg)$/i);
+                    if (match) {
+                        const id = parseInt(match[1]);
+                        const url = URL.createObjectURL(file);
+                        imageCache[id] = url;
+                        count++;
+                    }
+                }
+                console.log(`Loaded ${count} images from folder`);
+                const btn = document.getElementById('btnSelectFolder');
+                btn.textContent = `✅ ${count} imágenes cargadas`;
+                btn.style.background = '#4ade80';
+                setTimeout(() => {
+                    btn.textContent = '📁 Seleccionar carpeta de imágenes';
+                    btn.style.background = '';
+                }, 3000);
+                renderLevelList();
+                // If a level was selected, reload its image
+                if (currentLevel) selectLevel(currentLevel);
+            };
+            input.click();
+        });
+
+        // ── RENDER LIST ──────────────────────────────────────────────────────────
+        function renderLevelList() {
+            const list = document.getElementById('levelList');
+            list.innerHTML = '';
+
+            if (Object.keys(imageCache).length === 0) {
+                list.innerHTML = `
+                    <div style="padding: 20px; text-align: center;">
+                        <p style="color: #e94560; font-size: 14px; margin-bottom: 8px;">👆 Primero seleccioná la carpeta de imágenes</p>
+                        <p style="color: #888; font-size: 12px;">Carpeta: tools/assets/puzzlesImg/</p>
+                    </div>
+                `;
+                // Still render the level items
+            }
+
+            for (const lvl of levels) {
+                const el = document.createElement('div');
+                const hasCrop = !!crops[lvl.id];
+                const hasImage = !!imageCache[lvl.id];
+                el.className = 'level-item' + (hasCrop ? ' has-crop' : '') + (currentLevel && currentLevel.id === lvl.id ? ' active' : '');
+                el.innerHTML = `
+                    <div>
+                        <span class="id">#${lvl.id}</span>
+                        ${!hasImage ? '<span style="font-size:10px;color:#666;margin-left:4px">📷?</span>' : ''}
+                    </div>
+                    <span class="info">${lvl.cols}×${lvl.rows}</span>
+                `;
+                el.addEventListener('click', () => selectLevel(lvl));
+                list.appendChild(el);
+            }
+        }
+
+        function selectLevel(lvl) {
+            currentLevel = lvl;
+            document.getElementById('tbLevel').textContent = `#${lvl.id}`;
+            document.getElementById('tbGrid').textContent = `${lvl.cols}×${lvl.rows}`;
+            document.getElementById('tbImg').textContent = `${lvl.id}.png`;
+
+            if (!imageCache[lvl.id]) {
+                currentImage = null;
+                draw();
+                return;
+            }
+
+            const img = new Image();
+            img.onload = () => {
+                currentImage = img;
+                if (crops[lvl.id]) {
+                    cropRect = { ...crops[lvl.id] };
+                } else {
+                    const s = Math.min(img.naturalWidth, img.naturalHeight);
+                    cropRect = {
+                        x: (img.naturalWidth - s) / 2,
+                        y: (img.naturalHeight - s) / 2,
+                        w: s, h: s
+                    };
+                }
+                resetView();
+                draw();
+                renderLevelList();
+            };
+            img.src = imageCache[lvl.id];
+        }
+
+        function resetView() {
+            if (!currentImage) return;
+            const cw = canvas.parentElement.clientWidth;
+            const ch = canvas.parentElement.clientHeight;
+            canvas.width = cw;
+            canvas.height = ch;
+            viewZoom = Math.min((cw - 40) / currentImage.naturalWidth, (ch - 40) / currentImage.naturalHeight, 1.5);
+            viewX = (cw - currentImage.naturalWidth * viewZoom) / 2;
+            viewY = (ch - currentImage.naturalHeight * viewZoom) / 2;
+        }
+
+        function imgToScreen(ix, iy) { return { x: ix * viewZoom + viewX, y: iy * viewZoom + viewY }; }
+        function screenToImg(sx, sy) { return { x: (sx - viewX) / viewZoom, y: (sy - viewY) / viewZoom }; }
+
+        function draw() {
+            const cw = canvas.width, ch = canvas.height;
+            ctx.clearRect(0, 0, cw, ch);
+            ctx.fillStyle = '#1a1a1a'; ctx.fillRect(0, 0, cw, ch);
+
+            // Checkerboard
+            const gs = 20; ctx.fillStyle = '#222';
+            for (let y = 0; y < ch; y += gs)
+                for (let x = (y / gs % 2) * gs; x < cw; x += gs * 2)
+                    ctx.fillRect(x, y, gs, gs);
+
+            if (!currentImage) {
+                ctx.fillStyle = '#888'; ctx.font = '20px sans-serif'; ctx.textAlign = 'center';
+                if (Object.keys(imageCache).length === 0)
+                    ctx.fillText('👆 Seleccioná la carpeta de imágenes primero', cw / 2, ch / 2);
+                else
+                    ctx.fillText('Selecciona un nivel de la lista', cw / 2, ch / 2);
+                return;
+            }
+
+            // Draw image
+            const p0 = imgToScreen(0, 0);
+            const iw = currentImage.naturalWidth * viewZoom;
+            const ih = currentImage.naturalHeight * viewZoom;
+            ctx.drawImage(currentImage, p0.x, p0.y, iw, ih);
+
+            // Dim outside crop
+            const c0 = imgToScreen(cropRect.x, cropRect.y);
+            const cW = cropRect.w * viewZoom;
+            const cH = cropRect.h * viewZoom;
+            ctx.fillStyle = 'rgba(0,0,0,0.55)';
+            ctx.fillRect(p0.x, p0.y, iw, c0.y - p0.y);
+            ctx.fillRect(p0.x, c0.y + cH, iw, (p0.y + ih) - (c0.y + cH));
+            ctx.fillRect(p0.x, c0.y, c0.x - p0.x, cH);
+            ctx.fillRect(c0.x + cW, c0.y, (p0.x + iw) - (c0.x + cW), cH);
+
+            // Grid lines
+            if (currentLevel) {
+                let cols = currentLevel.cols, rows = currentLevel.rows;
+                // Swap if aspect ratios mismatch
+                const cropLandscape = cropRect.w >= cropRect.h;
+                const gridLandscape = cols >= rows;
+                if (cropLandscape !== gridLandscape && cols !== rows) {
+                    cols = currentLevel.rows;
+                    rows = currentLevel.cols;
+                }
+
+                ctx.strokeStyle = 'rgba(233, 69, 96, 0.7)'; ctx.lineWidth = 1.5; ctx.setLineDash([6, 4]);
+                for (let i = 1; i < cols; i++) {
+                    const x = c0.x + (cW / cols) * i;
+                    ctx.beginPath(); ctx.moveTo(x, c0.y); ctx.lineTo(x, c0.y + cH); ctx.stroke();
+                }
+                for (let i = 1; i < rows; i++) {
+                    const y = c0.y + (cH / rows) * i;
+                    ctx.beginPath(); ctx.moveTo(c0.x, y); ctx.lineTo(c0.x + cW, y); ctx.stroke();
+                }
+                ctx.setLineDash([]);
+
+                document.getElementById('tbGrid').textContent = `${cols}×${rows}` +
+                    (cols !== currentLevel.cols ? ' ✨' : '');
+            }
+
+            // Crop border
+            ctx.strokeStyle = '#e94560'; ctx.lineWidth = 2;
+            ctx.strokeRect(c0.x, c0.y, cW, cH);
+
+            // Handles
+            const hs = 8; ctx.fillStyle = '#e94560';
+            const handles = getHandlePositions(c0.x, c0.y, cW, cH);
+            for (const h of Object.values(handles))
+                ctx.fillRect(h.x - hs / 2, h.y - hs / 2, hs, hs);
+
+            document.getElementById('tbCrop').textContent =
+                `x:${Math.round(cropRect.x)} y:${Math.round(cropRect.y)} w:${Math.round(cropRect.w)} h:${Math.round(cropRect.h)}`;
+        }
+
+        function getHandlePositions(sx, sy, sw, sh) {
+            return {
+                tl: { x: sx, y: sy }, tr: { x: sx + sw, y: sy }, bl: { x: sx, y: sy + sh }, br: { x: sx + sw, y: sy + sh },
+                t: { x: sx + sw / 2, y: sy }, b: { x: sx + sw / 2, y: sy + sh }, l: { x: sx, y: sy + sh / 2 }, r: { x: sx + sw, y: sy + sh / 2 }
+            };
+        }
+
+        function hitTestHandles(mx, my) {
+            const c0 = imgToScreen(cropRect.x, cropRect.y);
+            const cW = cropRect.w * viewZoom, cH = cropRect.h * viewZoom;
+            const handles = getHandlePositions(c0.x, c0.y, cW, cH);
+            const T = 12;
+            for (const [key, pos] of Object.entries(handles))
+                if (Math.abs(mx - pos.x) < T && Math.abs(my - pos.y) < T) return key;
+            if (mx >= c0.x && mx <= c0.x + cW && my >= c0.y && my <= c0.y + cH) return 'move';
+            return null;
+        }
+
+        // ── MOUSE EVENTS ─────────────────────────────────────────────────────────
+        canvas.addEventListener('mousedown', (e) => {
+            const mx = e.offsetX, my = e.offsetY;
+            if (e.button === 1 || e.button === 2) {
+                isPanning = true; panStart = { x: mx, y: my }; viewStart = { x: viewX, y: viewY };
+                e.preventDefault(); return;
+            }
+            if (!currentImage) return;
+            const hit = hitTestHandles(mx, my);
+            if (hit) { dragging = hit; dragStart = { x: mx, y: my }; cropStart = { ...cropRect }; }
+            else { isPanning = true; panStart = { x: mx, y: my }; viewStart = { x: viewX, y: viewY }; }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            const mx = e.offsetX, my = e.offsetY;
+            if (isPanning) { viewX = viewStart.x + (mx - panStart.x); viewY = viewStart.y + (my - panStart.y); draw(); return; }
+            if (!dragging || !currentImage) {
+                const hit = hitTestHandles(mx, my);
+                const c = { tl: 'nwse-resize', br: 'nwse-resize', tr: 'nesw-resize', bl: 'nesw-resize', t: 'ns-resize', b: 'ns-resize', l: 'ew-resize', r: 'ew-resize', move: 'grab' };
+                canvas.style.cursor = c[hit] || 'default'; return;
+            }
+            const dx = (mx - dragStart.x) / viewZoom, dy = (my - dragStart.y) / viewZoom;
+            if (dragging === 'move') { cropRect.x = cropStart.x + dx; cropRect.y = cropStart.y + dy; }
+            else {
+                let nx = cropStart.x, ny = cropStart.y, nw = cropStart.w, nh = cropStart.h;
+                if (dragging.includes('l')) { nx = cropStart.x + dx; nw = cropStart.w - dx; }
+                if (dragging.includes('r')) nw = cropStart.w + dx;
+                if (dragging.includes('t')) { ny = cropStart.y + dy; nh = cropStart.h - dy; }
+                if (dragging.includes('b')) nh = cropStart.h + dy;
+                if (nw > 20 && nh > 20) { cropRect.x = nx; cropRect.y = ny; cropRect.w = nw; cropRect.h = nh; }
+            }
+            if (currentLevel) crops[currentLevel.id] = { x: Math.round(cropRect.x), y: Math.round(cropRect.y), w: Math.round(cropRect.w), h: Math.round(cropRect.h) };
+            draw();
+        });
+
+        window.addEventListener('mouseup', () => { dragging = null; isPanning = false; canvas.style.cursor = 'default'; });
+
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const mx = e.offsetX, my = e.offsetY, oldZoom = viewZoom;
+            viewZoom = Math.max(0.1, Math.min(5, viewZoom * (e.deltaY > 0 ? 0.9 : 1.1)));
+            viewX = mx - (mx - viewX) * (viewZoom / oldZoom);
+            viewY = my - (my - viewY) * (viewZoom / oldZoom);
+            draw();
+        }, { passive: false });
+
+        canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+        // ── BUTTONS ──────────────────────────────────────────────────────────────
+        document.getElementById('btnSave').addEventListener('click', () => {
+            const json = JSON.stringify(crops, null, 4);
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+            a.download = 'puzzle_crops.json'; a.click();
+            const btn = document.getElementById('btnSave');
+            btn.textContent = '✅ Guardado!';
+            setTimeout(() => btn.textContent = '💾 Guardar puzzle_crops.json', 2000);
+        });
+
+        document.getElementById('btnLoad').addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file'; input.accept = '.json';
+            input.onchange = (e) => {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    try { crops = JSON.parse(ev.target.result); renderLevelList(); if (currentLevel) selectLevel(currentLevel); }
+                    catch (err) { alert('Error: ' + err.message); }
+                };
+                reader.readAsText(e.target.files[0]);
+            };
+            input.click();
+        });
+
+        document.getElementById('btnReset').addEventListener('click', () => {
+            if (!currentLevel || !currentImage) return;
+            delete crops[currentLevel.id];
+            const s = Math.min(currentImage.naturalWidth, currentImage.naturalHeight);
+            cropRect = { x: (currentImage.naturalWidth - s) / 2, y: (currentImage.naturalHeight - s) / 2, w: s, h: s };
+            renderLevelList(); draw();
+        });
+
+        window.addEventListener('resize', () => { if (currentImage) resetView(); draw(); });
+
+        // ── INIT ─────────────────────────────────────────────────────────────────
+        (() => {
+            const cw = canvas.parentElement.clientWidth;
+            const ch = canvas.parentElement.clientHeight;
+            canvas.width = cw; canvas.height = ch;
+            renderLevelList();
+            draw();
+        })();
+    </script>
+</body>
+
+</html>
