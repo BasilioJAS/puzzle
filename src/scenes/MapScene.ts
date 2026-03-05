@@ -255,28 +255,7 @@ export class MapScene implements Scene {
                 throw new Error("Level files missing");
             }
 
-            // 2. Discover columns (iterate c until 404 or non-image)
-            let c = 1;
-            while (true) {
-                const url = `${baseUrl}assets/levels/${level.id}/piece_0_${c}.png`;
-                const res = await fetch(url, { method: 'HEAD' });
-                if (!isImage(res)) break;
-                c++;
-            }
-            level.cols = c;
-
-            // 3. Discover rows (iterate r until 404 or non-image)
-            let r = 1;
-            while (true) {
-                const url = `${baseUrl}assets/levels/${level.id}/piece_${r}_0.png`;
-                const res = await fetch(url, { method: 'HEAD' });
-                if (!isImage(res)) break;
-                r++;
-            }
-            level.rows = r;
-
             level.pieces = level.cols * level.rows;
-            level.piecesFolder = `assets/levels/${level.id}/`;
 
             this.overlayElements.forEach(el => this.ui.removeElement(el));
             this.overlayElements = [];

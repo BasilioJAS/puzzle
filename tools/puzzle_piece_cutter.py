@@ -85,9 +85,9 @@ def cut_pieces(image_path: str, masks_dir: str, output_dir: str) -> None:
     rows = max_r + 1
     
     # Calculamos el tamaño de celda base partiendo del tamaño de la imagen puente y la grilla
-    # Asumimos que la imagen fuente representa el puzzle completo
-    cell_w = src_w // cols
-    cell_h = src_h // rows
+    # Usamos floats para no perder precisión en el grid
+    cell_w = src_w / cols
+    cell_h = src_h / rows
 
     # Encontrar el bounding box MÁXIMO (cuánto sobresale cualquier pestaña en cualquier dirección)
     # para crear un tamaño de textura uniforme centrado.
@@ -112,14 +112,18 @@ def cut_pieces(image_path: str, masks_dir: str, output_dir: str) -> None:
         cmin_mask, cmax_mask = np.where(cols_with_content)[0][[0, -1]]
 
         # Celda teórica de esta pieza:
-        cell_y0 = r * cell_h
-        cell_x0 = c * cell_w
+        cell_y0 = round(r * cell_h)
+        cell_x0 = round(c * cell_w)
+        
+        # Tamaño de celda en esta cuadrícula discreta (puede variar 1px por redondeo)
+        curr_cell_w = round((c + 1) * cell_w) - cell_x0
+        curr_cell_h = round((r + 1) * cell_h) - cell_y0
 
         # Cuánto sobresale de su celda teórica
         pad_top = cell_y0 - rmin_mask
-        pad_bottom = rmax_mask - (cell_y0 + cell_h - 1)
+        pad_bottom = rmax_mask - (cell_y0 + curr_cell_h - 1)
         pad_left = cell_x0 - cmin_mask
-        pad_right = cmax_mask - (cell_x0 + cell_w - 1)
+        pad_right = cmax_mask - (cell_x0 + curr_cell_w - 1)
 
         max_pad_top = max(max_pad_top, pad_top)
         max_pad_bottom = max(max_pad_bottom, pad_bottom)
@@ -132,9 +136,11 @@ def cut_pieces(image_path: str, masks_dir: str, output_dir: str) -> None:
     pad_h = max(max_pad_left, max_pad_right)
     pad_v = max(max_pad_top, max_pad_bottom)
 
-    # El tamaño final de TODA LAS PIEZAS será:
-    final_w = cell_w + pad_h * 2
-    final_h = cell_h + pad_v * 2
+    # El tamaño final de TODA LAS PIEZAS será basado en un cell size promedio
+    base_cell_w = round(cell_w)
+    base_cell_h = round(cell_h)
+    final_w = base_cell_w + pad_h * 2
+    final_h = base_cell_h + pad_v * 2
 
     print(f"Dimensiones unificadas por pieza: {final_w}x{final_h}px (Padding V:{pad_v} H:{pad_h})")
     print(f"Procesando {len(parsed_masks)} máscaras → {out_path.resolve()}\n")
@@ -150,8 +156,10 @@ def cut_pieces(image_path: str, masks_dir: str, output_dir: str) -> None:
         piece_canvas = np.zeros((final_h, final_w, 4), dtype=np.uint8)
 
         # Ubicación teórica de la celda en la imagen fuente
-        cell_y0 = r * cell_h
-        cell_x0 = c * cell_w
+        cell_y0 = round(r * cell_h)
+        cell_x0 = round(c * cell_w)
+        curr_cell_w = round((c + 1) * cell_w) - cell_x0
+        curr_cell_h = round((r + 1) * cell_h) - cell_y0
 
         # Ubicación donde debemos "pegar" el recorte fuente en nuestro canvas unificado
         # El origen X de la celda teórica en el canvas unificado es `pad_h`
@@ -220,6 +228,10 @@ def main():
         default="pieces_output",
         help="Carpeta de salida para las piezas (default: pieces_output)",
     )
+    parser.add_argument(
+        "--crop", type=int, nargs=4, metavar=("X", "Y", "W", "H"),
+        help="Región de crop: x y w h. Recorta la imagen fuente antes de aplicar máscaras."
+    )
     args = parser.parse_args()
 
     img_path = Path(args.image)
@@ -232,7 +244,26 @@ def main():
         print(f"ERROR: No es un directorio válido: {args.masks_folder}")
         sys.exit(1)
 
-    cut_pieces(str(img_path), str(masks_path), args.output_folder)
+    # If crop is provided, crop the image first to a temp file
+    actual_image = str(img_path)
+    if args.crop:
+        cx, cy, cw, ch = args.crop
+        print(f"Aplicando crop: x={cx} y={cy} w={cw} h={ch}")
+        from PIL import Image as PILImage
+        src = PILImage.open(img_path)
+        cropped = src.crop((cx, cy, cx + cw, cy + ch))
+        import tempfile
+        tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+        cropped.save(tmp.name, "PNG")
+        actual_image = tmp.name
+        print(f"Imagen croppeada guardada temporalmente: {tmp.name}")
+
+    cut_pieces(actual_image, str(masks_path), args.output_folder)
+
+    # Clean up temp file
+    if args.crop:
+        import os
+        os.unlink(actual_image)
 
 
 if __name__ == "__main__":

@@ -90,17 +90,17 @@ def edge_points(ax, ay, bx, by, direction, n_curve=20):
 
 # ── Piece outline ──────────────────────────────────────────────────────────────
 
-def piece_polygon(col, row, cols, rows, cell, tabs, margin=0):
+def piece_polygon(col, row, cols, rows, cell_w, cell_h, tabs, margin=0):
     """
     Construye el polígono de la pieza en (col, row).
 
     tabs[row][col] = (top, right, bottom, left)
       +1 = pestaña saliente, -1 = ranura entrante, 0 = borde plano (borde externo)
     """
-    x0 = col * cell + margin
-    y0 = row * cell + margin
-    x1 = x0 + cell
-    y1 = y0 + cell
+    x0 = col * cell_w + margin
+    y0 = row * cell_h + margin
+    x1 = x0 + cell_w
+    y1 = y0 + cell_h
 
     top, right, bottom, left = tabs[row][col]
 
@@ -125,14 +125,14 @@ def piece_polygon(col, row, cols, rows, cell, tabs, margin=0):
 
 # ── Main generation ────────────────────────────────────────────────────────────
 
-def generate_masks(cols: int, rows: int, cell_size: int, output_dir: str, seed: int | None):
+def generate_masks(cols: int, rows: int, cell_w: float, cell_h: float, output_dir: str, seed: int | None):
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
 
     rng = random.Random(seed)
 
-    img_w = cols * cell_size
-    img_h = rows * cell_size
+    img_w = round(cols * cell_w)
+    img_h = round(rows * cell_h)
 
     # Generar direcciones de pestañas para cada borde compartido
     # tabs[r][c] = (top, right, bottom, left)
@@ -162,7 +162,7 @@ def generate_masks(cols: int, rows: int, cell_size: int, output_dir: str, seed: 
 
     for r in range(rows):
         for c in range(cols):
-            poly = piece_polygon(c, r, cols, rows, cell_size, tabs)
+            poly = piece_polygon(c, r, cols, rows, cell_w, cell_h, tabs)
 
             # Lienzo del tamaño de la imagen fuente, fondo negro
             mask_img = Image.new("L", (img_w, img_h), 0)
@@ -197,6 +197,10 @@ def main():
         "--image-size", type=int, nargs=2, metavar=("W", "H"),
         help="Tamaño total de la imagen fuente (calcula cell-size automáticamente)"
     )
+    size_group.add_argument(
+        "--crop", type=int, nargs=4, metavar=("X", "Y", "W", "H"),
+        help="Región de crop: x y w h. Genera máscaras del tamaño del crop."
+    )
 
     parser.add_argument(
         "--output", "-o", default="masks_output", metavar="DIR",
@@ -209,16 +213,22 @@ def main():
 
     args = parser.parse_args()
 
-    if args.image_size:
+    if args.crop:
+        _cx, _cy, cw, ch = args.crop
+        cell_w = cw / args.cols
+        cell_h = ch / args.rows
+    elif args.image_size:
         w, h = args.image_size
-        cell_size = min(w // args.cols, h // args.rows)
+        cell_w = w / args.cols
+        cell_h = h / args.rows
     else:
-        cell_size = args.cell_size
+        cell_w = args.cell_size
+        cell_h = args.cell_size
 
-    if cell_size < 64:
-        print(f"Advertencia: cell_size={cell_size} es muy chico; las pestañas pueden quedar mal.")
+    if min(cell_w, cell_h) < 64:
+        print(f"Advertencia: cell size ({cell_w:.1f}x{cell_h:.1f}) es muy chico; las pestañas pueden quedar mal.")
 
-    generate_masks(args.cols, args.rows, cell_size, args.output, args.seed)
+    generate_masks(args.cols, args.rows, cell_w, cell_h, args.output, args.seed)
 
 
 if __name__ == "__main__":

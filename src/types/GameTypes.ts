@@ -58,6 +58,8 @@ export interface LevelConfig {
     cols: number;
     rows: number;
     piecesFolder?: string;
+    cellW_px?: number; // True cropped width
+    cellH_px?: number; // True cropped height
     image?: string; // fallback
 }
 

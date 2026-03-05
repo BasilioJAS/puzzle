@@ -42,7 +42,8 @@ export class GameScene implements Scene {
     private gridY: number = 0;
     private gridW: number = 0;
     private gridH: number = 0;
-    private cellSize: number = 0; // square cells
+    private cellW: number = 0;
+    private cellH: number = 0;
 
     // Dragging
     // Dragging
@@ -130,8 +131,8 @@ export class GameScene implements Scene {
                 p.placed = true;
                 p.x = p.targetX;
                 p.y = p.targetY;
-                p.width = this.cellSize;
-                p.height = this.cellSize;
+                p.width = this.cellW;
+                p.height = this.cellH;
             }
             this.winLevel();
         }
@@ -253,13 +254,26 @@ export class GameScene implements Scene {
         const layout = this.getLayout();
         const gridRect = this.resolveRect(layout.grid);
 
-        const n = this.level.cols;
-        const maxCellFromW = Math.floor(gridRect.w / n);
-        const maxCellFromH = Math.floor(gridRect.h / n);
-        this.cellSize = Math.min(maxCellFromW, maxCellFromH);
+        const cols = this.level.cols;
+        const rows = this.level.rows;
 
-        this.gridW = this.cellSize * n;
-        this.gridH = this.cellSize * n;
+        const cellAspect = (this.level.cellW_px && this.level.cellH_px)
+            ? (this.level.cellW_px / this.level.cellH_px)
+            : 1.0;
+
+        let w = gridRect.w / cols;
+        let h = w / cellAspect;
+
+        if (h * rows > gridRect.h) {
+            h = gridRect.h / rows;
+            w = h * cellAspect;
+        }
+
+        this.cellW = w;
+        this.cellH = h;
+
+        this.gridW = this.cellW * cols;
+        this.gridH = this.cellH * rows;
         this.gridX = gridRect.x + (gridRect.w - this.gridW) / 2;
         this.gridY = gridRect.y + (gridRect.h - this.gridH) / 2;
     }
@@ -271,10 +285,10 @@ export class GameScene implements Scene {
             row: r,
             x: 0,
             y: 0,
-            targetX: this.gridX + c * this.cellSize,
-            targetY: this.gridY + r * this.cellSize,
-            width: this.cellSize,
-            height: this.cellSize,
+            targetX: this.gridX + c * this.cellW,
+            targetY: this.gridY + r * this.cellH,
+            width: this.cellW,
+            height: this.cellH,
             placed: false,
             dragging: false,
             sx: (c / cols) * imgW,
@@ -345,8 +359,8 @@ export class GameScene implements Scene {
 
         this.pieces.forEach((p, i) => {
             const pos = shuffledPos[i];
-            p.x = this.gridX + pos.c * this.cellSize;
-            p.y = this.gridY + pos.r * this.cellSize;
+            p.x = this.gridX + pos.c * this.cellW;
+            p.y = this.gridY + pos.r * this.cellH;
         });
     }
 
@@ -496,8 +510,8 @@ export class GameScene implements Scene {
     }
 
     private findGridCellAt(x: number, y: number): { col: number; row: number } | null {
-        const col = Math.floor((x - this.gridX) / this.cellSize);
-        const row = Math.floor((y - this.gridY) / this.cellSize);
+        const col = Math.floor((x - this.gridX) / this.cellW);
+        const row = Math.floor((y - this.gridY) / this.cellH);
         if (this.level && col >= 0 && col < this.level.cols && row >= 0 && row < this.level.rows) {
             return { col, row };
         }
@@ -507,8 +521,8 @@ export class GameScene implements Scene {
     private findPieceOnGridAt(col: number, row: number): PuzzlePiece | null {
         return this.pieces.find(p => {
             if (p.dragging || p.placed) return false;
-            const pCol = Math.round((p.x - this.gridX) / this.cellSize);
-            const pRow = Math.round((p.y - this.gridY) / this.cellSize);
+            const pCol = Math.round((p.x - this.gridX) / this.cellW);
+            const pRow = Math.round((p.y - this.gridY) / this.cellH);
             return pCol === col && pRow === row;
         }) || null;
     }
@@ -517,8 +531,8 @@ export class GameScene implements Scene {
         return this.pieces.find(p => {
             if (p === exclude) return false;
             if (p.placed) return false;
-            const pCol = Math.round((p.x - this.gridX) / this.cellSize);
-            const pRow = Math.round((p.y - this.gridY) / this.cellSize);
+            const pCol = Math.round((p.x - this.gridX) / this.cellW);
+            const pRow = Math.round((p.y - this.gridY) / this.cellH);
             return pCol === col && pRow === row;
         }) || null;
     }
@@ -528,10 +542,10 @@ export class GameScene implements Scene {
     }
 
     private placePieceOnCell(piece: PuzzlePiece, col: number, row: number): void {
-        piece.x = this.gridX + col * this.cellSize;
-        piece.y = this.gridY + row * this.cellSize;
-        piece.width = this.cellSize;
-        piece.height = this.cellSize;
+        piece.x = this.gridX + col * this.cellW;
+        piece.y = this.gridY + row * this.cellH;
+        piece.width = this.cellW;
+        piece.height = this.cellH;
         piece.snapAnim = 1;
     }
 
@@ -547,8 +561,8 @@ export class GameScene implements Scene {
         piece.placed = true;
         piece.x = piece.targetX;
         piece.y = piece.targetY;
-        piece.width = this.cellSize;
-        piece.height = this.cellSize;
+        piece.width = this.cellW;
+        piece.height = this.cellH;
         piece.snapAnim = 1;
         this.assetManager.playSound('snap');
         this.checkWin();
@@ -748,9 +762,9 @@ export class GameScene implements Scene {
             if (this.hintPiece && this.hintTimer > 0) {
                 const alpha = 0.3 + 0.3 * Math.sin(this.elapsed * 6);
                 ctx.fillStyle = `rgba(250, 204, 21, ${alpha})`;
-                ctx.fillRect(this.hintPiece.targetX, this.hintPiece.targetY, this.cellSize, this.cellSize);
+                ctx.fillRect(this.hintPiece.targetX, this.hintPiece.targetY, this.cellW, this.cellH);
                 ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 3;
-                ctx.strokeRect(this.hintPiece.targetX, this.hintPiece.targetY, this.cellSize, this.cellSize);
+                ctx.strokeRect(this.hintPiece.targetX, this.hintPiece.targetY, this.cellW, this.cellH);
                 ctx.strokeStyle = `rgba(74, 222, 128, ${0.5 + 0.5 * Math.sin(this.elapsed * 6)})`;
                 ctx.strokeRect(this.hintPiece.x - 2, this.hintPiece.y - 2, this.hintPiece.width + 4, this.hintPiece.height + 4);
             }
@@ -788,9 +802,9 @@ export class GameScene implements Scene {
         ctx.strokeStyle = 'rgba(147, 197, 253, 0.6)';
         ctx.lineWidth = 1.5;
         for (let i = 1; i < n; i++) {
-            const y = this.gridY + i * this.cellSize;
+            const y = this.gridY + i * this.cellH;
             ctx.beginPath(); ctx.moveTo(this.gridX + 4, y); ctx.lineTo(this.gridX + this.gridW - 4, y); ctx.stroke();
-            const x = this.gridX + i * this.cellSize;
+            const x = this.gridX + i * this.cellW;
             ctx.beginPath(); ctx.moveTo(x, this.gridY + 4); ctx.lineTo(x, this.gridY + this.gridH - 4); ctx.stroke();
         }
 
@@ -808,8 +822,8 @@ export class GameScene implements Scene {
             let id = 0;
             for (let r = 0; r < this.level!.rows; r++) {
                 for (let c = 0; c < n; c++) {
-                    const cx = this.gridX + c * this.cellSize + this.cellSize / 2;
-                    const cy = this.gridY + r * this.cellSize + this.cellSize / 2;
+                    const cx = this.gridX + c * this.cellW + this.cellW / 2;
+                    const cy = this.gridY + r * this.cellH + this.cellH / 2;
                     ctx.fillText(`${id++}`, cx, cy);
                 }
             }
@@ -855,26 +869,16 @@ export class GameScene implements Scene {
         if (piece.imageKey) {
             const indImg = this.assetManager.getImage(piece.imageKey);
             if (indImg) {
-                // Determine padding scale to center theoretical cell_size logic inside the unified bounds
-                // indImg is square (final_w x final_h). It contains the piece + padding matching the BBOX logic in cutter.
-                // The true visually centered scale for the bounding rect vs cell rect:
-                // cell_size is visually the theoretical grid. So drawing indImg over it means we stretch its physical pixel width
-                // to a canvas scaling ratio: (cellSize / cell_w_pixels)
-                // But we actually only have indImg, we don't have the original cell_w_pixels.
-                // Wait, if cutter pads evenly so cell is dead-center, drawing indImg centered on piece.x+piece.width/2 
-                // scaled appropriately will work exactly perfect.
-                const cellRefImage = this.level!.image ? this.assetManager.getImage(this.level!.image) : null;
-                let drawRatio = 1;
-                if (cellRefImage) {
-                    const originalCellPxW = cellRefImage.width / this.level!.cols;
-                    drawRatio = indImg.width / originalCellPxW;
-                } else {
-                    const originalCellPxW = 640 / this.level!.cols;
-                    drawRatio = indImg.width / originalCellPxW;
+                let originalCellPxW = (this.level as any).cellW_px;
+                if (!originalCellPxW) {
+                    const cellRefImage = this.level!.image ? this.assetManager.getImage(this.level!.image) : null;
+                    originalCellPxW = cellRefImage ? (cellRefImage.width / this.level!.cols) : (640 / this.level!.cols);
                 }
 
-                const drawW = piece.width * drawRatio;
-                const drawH = piece.height * drawRatio;
+                // Transform original padding to canvas layout space
+                const scale = piece.width / originalCellPxW;
+                const drawW = indImg.width * scale;
+                const drawH = indImg.height * scale;
                 const offX = (drawW - piece.width) / 2;
                 const offY = (drawH - piece.height) / 2;
 
@@ -1011,10 +1015,21 @@ export class GameScene implements Scene {
             const padding = 40;
             const maxW = w - padding * 2;
             const maxH = h - padding * 2;
-            // Fit the grid into the screen keeping it square
-            const cellDraw = Math.min(Math.floor(maxW / cols), Math.floor(maxH / rows));
-            const gridDrawW = cellDraw * cols;
-            const gridDrawH = cellDraw * rows;
+            // Fit the grid into the screen keeping it rectangular
+            const cellAspect = (this.level.cellW_px && this.level.cellH_px)
+                ? (this.level.cellW_px / this.level.cellH_px)
+                : 1.0;
+
+            let cellDrawW = maxW / cols;
+            let cellDrawH = cellDrawW / cellAspect;
+
+            if (cellDrawH * rows > maxH) {
+                cellDrawH = maxH / rows;
+                cellDrawW = cellDrawH * cellAspect;
+            }
+
+            const gridDrawW = cellDrawW * cols;
+            const gridDrawH = cellDrawH * rows;
             const originX = (w - gridDrawW) / 2;
             const originY = (h - gridDrawH) / 2;
 
@@ -1025,21 +1040,24 @@ export class GameScene implements Scene {
             if (this.level.piecesFolder) {
                 // Dibuja PNGs disgregados de cada pieza en su grilla final calculada con ratio de padding.
                 const cellRefImage = image;
-                const originalCellPxW = cellRefImage ? cellRefImage.width / cols : 640 / cols;
 
                 for (const piece of this.pieces) {
                     if (piece.imageKey) {
                         const indImg = this.assetManager.getImage(piece.imageKey);
                         if (indImg) {
-                            const drawRatio = indImg.width / originalCellPxW;
-                            const drawW = cellDraw * drawRatio;
-                            const drawH = cellDraw * drawRatio;
-                            const destX = originX + piece.col * cellDraw;
-                            const destY = originY + piece.row * cellDraw;
-                            const offX = (drawW - cellDraw) / 2;
-                            const offY = (drawH - cellDraw) / 2;
-                            const pcx = destX + cellDraw / 2;
-                            const pcy = destY + cellDraw / 2;
+                            let originalCellPxW = (this.level as any).cellW_px;
+                            if (!originalCellPxW) {
+                                originalCellPxW = cellRefImage ? (cellRefImage.width / cols) : (640 / cols);
+                            }
+                            const scale = cellDrawW / originalCellPxW;
+                            const drawW = indImg.width * scale;
+                            const drawH = indImg.height * scale;
+                            const destX = originX + piece.col * cellDrawW;
+                            const destY = originY + piece.row * cellDrawH;
+                            const offX = (drawW - cellDrawW) / 2;
+                            const offY = (drawH - cellDrawH) / 2;
+                            const pcx = destX + cellDrawW / 2;
+                            const pcy = destY + cellDrawH / 2;
 
                             ctx.save();
                             ctx.translate(pcx, pcy);
@@ -1054,17 +1072,17 @@ export class GameScene implements Scene {
             } else if (image) {
                 // Dibuja recortando de img fuente (lógica clásica legacy)
                 for (const piece of this.pieces) {
-                    const destX = originX + piece.col * cellDraw;
-                    const destY = originY + piece.row * cellDraw;
-                    const pcx = destX + cellDraw / 2;
-                    const pcy = destY + cellDraw / 2;
+                    const destX = originX + piece.col * cellDrawW;
+                    const destY = originY + piece.row * cellDrawH;
+                    const pcx = destX + cellDrawW / 2;
+                    const pcy = destY + cellDrawH / 2;
 
                     ctx.save();
                     ctx.translate(pcx, pcy);
                     const finalRot = piece.isFitForced ? (piece.fitForceRotation || 0) : 0;
                     ctx.rotate(finalRot);
                     ctx.translate(-pcx, -pcy);
-                    ctx.drawImage(image, piece.sx, piece.sy, piece.sw, piece.sh, destX, destY, cellDraw, cellDraw);
+                    ctx.drawImage(image, piece.sx, piece.sy, piece.sw, piece.sh, destX, destY, cellDrawW, cellDrawH);
                     ctx.restore();
                 }
             }
@@ -1072,11 +1090,11 @@ export class GameScene implements Scene {
             // Draw sticky tapes OVER all the board tiles in celebration too
             for (const piece of this.pieces) {
                 if (piece.isFitForced) {
-                    const destX = originX + piece.col * cellDraw;
-                    const destY = originY + piece.row * cellDraw;
-                    const pcx = destX + cellDraw / 2;
-                    const pcy = destY + cellDraw / 2;
-                    this.drawStickyTape(ctx, pcx, pcy, cellDraw, cellDraw, piece.fitForceRotation || 0);
+                    const destX = originX + piece.col * cellDrawW;
+                    const destY = originY + piece.row * cellDrawH;
+                    const pcx = destX + cellDrawW / 2;
+                    const pcy = destY + cellDrawH / 2;
+                    this.drawStickyTape(ctx, pcx, pcy, cellDrawW, cellDrawH, piece.fitForceRotation || 0);
                 }
             }
 
@@ -1190,8 +1208,8 @@ export class GameScene implements Scene {
     }
 
     private applyFitForce(tappedPiece: PuzzlePiece): void {
-        const currentCellCol = Math.round((tappedPiece.x - this.gridX) / this.cellSize);
-        const currentCellRow = Math.round((tappedPiece.y - this.gridY) / this.cellSize);
+        const currentCellCol = Math.round((tappedPiece.x - this.gridX) / this.cellW);
+        const currentCellRow = Math.round((tappedPiece.y - this.gridY) / this.cellH);
 
         const displacedPiece = this.pieces.find(p => p.col === currentCellCol && p.row === currentCellRow);
 
@@ -1226,8 +1244,8 @@ export class GameScene implements Scene {
         // Si la pieza que fue desplazada a un nuevo rol está justo geográficamente sobre él
         // entonces debería encajar sola automáticamente y disparar el check de ganar.
         if (displacedPiece && displacedPiece !== tappedPiece) {
-            const dCellCol = Math.round((displacedPiece.x - this.gridX) / this.cellSize);
-            const dCellRow = Math.round((displacedPiece.y - this.gridY) / this.cellSize);
+            const dCellCol = Math.round((displacedPiece.x - this.gridX) / this.cellW);
+            const dCellRow = Math.round((displacedPiece.y - this.gridY) / this.cellH);
             this.placePieceAt(displacedPiece, dCellCol, dCellRow);
         }
     }
@@ -1277,7 +1295,7 @@ export class GameScene implements Scene {
             this.ui.addElement(new Label({ x: startX + i * 60 - 15, y: (h - modalH) / 2 + 80, width: 30, height: 40, text: i < this.celebrationStars ? '⭐' : '☆', fontSize: 40, color: '#fbbf24' }));
         }
         this.ui.addElement(new Label({ x: 0, y: (h - modalH) / 2 + 140, width: w, height: 30, text: `Earned: ${this.celebrationStars * 10} 🪙`, fontSize: 20, color: '#fff' }));
-        this.ui.addElement(new Button({ x: (w - 180) / 2, y: (h - modalH) / 2 + 200, width: 180, height: 50, text: 'Next Level', bgColor: '#059669', borderRadius: 15, onClick: () => { const nextId = this.level!.id + 1; const nextLevel = this.level!.id < 20 ? this.configLoader.getConfig().levels.find(l => l.id === nextId) : null; if (nextLevel) { this.level = nextLevel; this.enter(this.ctx); } else { this.stateManager.changeState(GameState.MainMenu); } } }));
+        this.ui.addElement(new Button({ x: (w - 180) / 2, y: (h - modalH) / 2 + 200, width: 180, height: 50, text: 'Next Level', bgColor: '#059669', borderRadius: 15, onClick: () => { const nextId = this.level!.id + 1; const configLevels = this.configLoader.getConfig().levels || []; const nextLevel = nextId <= configLevels.length ? configLevels.find(l => l.id === nextId) : null; if (nextLevel) { this.level = nextLevel; this.enter(this.ctx); } else { this.stateManager.changeState(GameState.MainMenu); } } }));
         this.ui.addElement(new Button({ x: (w - 180) / 2, y: (h - modalH) / 2 + 265, width: 180, height: 45, text: 'Main Menu', bgColor: '#4b5563', borderRadius: 12, onClick: () => this.stateManager.changeState(GameState.MainMenu) }));
     }
 
@@ -1371,9 +1389,9 @@ export class GameScene implements Scene {
                 if (wPos.x >= p.x && wPos.x <= p.x + p.width && wPos.y >= p.y && wPos.y <= p.y + p.height) {
                     this.dragPiece = p; p.dragging = true; p.prevX = p.x; p.prevY = p.y;
                     this.dragOffX = wPos.x - p.x; this.dragOffY = wPos.y - p.y;
-                    this.dragFromGridCol = Math.round((p.prevX - this.gridX) / this.cellSize);
-                    this.dragFromGridRow = Math.round((p.prevY - this.gridY) / this.cellSize);
-                    p.width = this.cellSize; p.height = this.cellSize; p.animScale = 1.12; p.animScaleTarget = 1.05;
+                    this.dragFromGridCol = Math.round((p.prevX - this.gridX) / this.cellW);
+                    this.dragFromGridRow = Math.round((p.prevY - this.gridY) / this.cellH);
+                    p.width = this.cellW; p.height = this.cellH; p.animScale = 1.12; p.animScaleTarget = 1.05;
                     p.animOffsetY = 8; p.animRotation = (Math.random() - 0.5) * 0.05;
                     clickedPiece = true;
                     break;
