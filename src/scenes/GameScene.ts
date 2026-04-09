@@ -708,9 +708,9 @@ export class GameScene implements Scene {
         }
 
         const grad = ctx.createLinearGradient(0, 0, 0, h);
-        grad.addColorStop(0, '#fef3e2');
-        grad.addColorStop(0.5, '#fde8cd');
-        grad.addColorStop(1, '#e8dff5');
+        grad.addColorStop(0, '#ffe4f0');
+        grad.addColorStop(0.5, '#ffb6d9');
+        grad.addColorStop(1, '#ff80bf');
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, w, h);
 
