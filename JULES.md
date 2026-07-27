@@ -107,9 +107,14 @@ Every push to `main` triggers `.github/workflows/deploy.yml`:
 1. Installs dependencies (`npm ci`)
 2. Bumps patch version in `package.json` and commits it back
 3. Runs `npm run build` (`tsc && vite build`)
-4. Publishes the `dist/` folder to **GitHub Pages**
+4. Publishes the `dist/` folder to the root of the `gh-pages` branch (via `peaceiris/actions-gh-pages`, `keep_files: true` so PR previews aren't wiped)
 
 The live URL is always: **https://basiliojas.github.io/puzzle/**
+
+GitHub Pages must be configured (Settings → Pages) to deploy from branch `gh-pages` / `root` — not the "GitHub Actions" source — for this and the PR preview workflow to coexist.
+
+### PR previews
+Every pull request triggers `.github/workflows/preview.yml`, which builds with `VITE_BASE=/puzzle/preview/pr-<number>/` and publishes to `preview/pr-<number>/` on the `gh-pages` branch, without touching the production build at the root. The workflow comments the preview URL on the PR and updates it on every push. When the PR closes, its preview folder is deleted automatically.
 
 ### Making changes with Jules
 1. Edit code normally — Jules handles commits and pushes to `main`
