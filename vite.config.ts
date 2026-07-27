@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-    base: '/puzzle/',
+    base: process.env.VITE_BASE || '/puzzle/',
     root: '.',
     publicDir: 'public',
     server: {
