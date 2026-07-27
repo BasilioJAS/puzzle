@@ -1,0 +1,363 @@
+{
+    "assets": {
+        "images": {
+            "logo": "assets/images/logo.png",
+            "puzzle1": "assets/images/puzzle1.png",
+            "puzzle2": "assets/images/puzzle2.png",
+            "puzzle3": "assets/images/puzzle3.png",
+            "map_bg": "assets/images/map_bg.png",
+            "node_locked": "assets/images/node_locked.png",
+            "node_unlocked": "assets/images/node_unlocked.png",
+            "node_completed": "assets/images/node_completed.png",
+            "star": "assets/images/star.png",
+            "heart": "assets/images/heart.png",
+            "coin": "assets/images/coin.png",
+            "gem": "assets/images/gem.png",
+            "btn_play": "assets/images/btn_play.png",
+            "btn_shop": "assets/images/btn_shop.png",
+            "btn_settings": "assets/images/btn_settings.png",
+            "btn_back": "assets/images/btn_back.png",
+            "icon_skip": "assets/images/icon_skip.png",
+            "icon_hint": "assets/images/icon_hint.png",
+            "icon_force": "assets/images/icon_force.png",
+            "icon_slow": "assets/images/icon_slow.png"
+        },
+        "sounds": {
+            "click": "assets/sounds/FX01.aif",
+            "win": "assets/sounds/Rise04.aif",
+            "lose": "assets/sounds/Downer01.aif",
+            "snap": "assets/sounds/Coin01.aif",
+            "reward": "assets/sounds/Upper01.aif"
+        }
+    },
+    "localization": {
+        "en": {
+            "play": "PLAY",
+            "shop": "SHOP",
+            "settings": "SETTINGS",
+            "back": "BACK",
+            "level": "Level",
+            "time": "Time",
+            "lives": "Lives",
+            "coins": "Coins",
+            "gems": "Gems",
+            "tapToContinue": "Tap to Continue",
+            "youWin": "YOU WIN!",
+            "gameOver": "GAME OVER",
+            "nextLevel": "NEXT LEVEL",
+            "retry": "RETRY",
+            "mainMenu": "MAIN MENU",
+            "skip": "Skip Level",
+            "hint": "Hint",
+            "fitForce": "Fit Force",
+            "slowTime": "Slow Time",
+            "buy": "BUY",
+            "notEnough": "Not enough currency!",
+            "locked": "LOCKED",
+            "powerUps": "POWER-UPS"
+        }
+    },
+    "layout": {
+        "portrait": {
+            "topBar": {
+                "x": 0,
+                "y": 0,
+                "w": 1.0,
+                "h": 60
+            },
+            "grid": {
+                "x": 0.15,
+                "y": 0.09,
+                "w": 0.7,
+                "h": 0.5
+            },
+            "tray": {
+                "x": 0.1,
+                "y": 0.62,
+                "w": 0.8,
+                "h": 0.36
+            },
+            "trayDirection": "horizontal",
+            "powerUps": {
+                "x": 0.88,
+                "y": 0.09,
+                "w": 44,
+                "h": 220
+            }
+        },
+        "landscape": {
+            "topBar": {
+                "x": 0,
+                "y": 0,
+                "w": 1.0,
+                "h": 50
+            },
+            "grid": {
+                "x": 0.02,
+                "y": 0.12,
+                "w": 0.52,
+                "h": 0.85
+            },
+            "tray": {
+                "x": 0.56,
+                "y": 0.12,
+                "w": 0.42,
+                "h": 0.85
+            },
+            "trayDirection": "grid",
+            "powerUps": {
+                "x": 0.92,
+                "y": 0.12,
+                "w": 40,
+                "h": 200
+            }
+        }
+    },
+    "levels": [
+        {
+            "id": 1,
+            "timeLimit": 120
+        },
+        {
+            "id": 2,
+            "timeLimit": 110
+        },
+        {
+            "id": 3,
+            "timeLimit": 100
+        },
+        {
+            "id": 4,
+            "timeLimit": 90
+        },
+        {
+            "id": 5,
+            "timeLimit": 80
+        },
+        {
+            "id": 6,
+            "timeLimit": 180
+        },
+        {
+            "id": 7,
+            "timeLimit": 170
+        },
+        {
+            "id": 8,
+            "timeLimit": 160
+        },
+        {
+            "id": 9,
+            "timeLimit": 150
+        },
+        {
+            "id": 10,
+            "timeLimit": 140
+        },
+        {
+            "id": 11,
+            "timeLimit": 130
+        },
+        {
+            "id": 12,
+            "timeLimit": 120
+        },
+        {
+            "id": 13,
+            "timeLimit": 110
+        },
+        {
+            "id": 14,
+            "timeLimit": 100
+        },
+        {
+            "id": 15,
+            "timeLimit": 90
+        },
+        {
+            "id": 16,
+            "timeLimit": 240
+        },
+        {
+            "id": 17,
+            "timeLimit": 230
+        },
+        {
+            "id": 18,
+            "timeLimit": 220
+        },
+        {
+            "id": 19,
+            "timeLimit": 210
+        },
+        {
+            "id": 20,
+            "timeLimit": 200
+        },
+        {
+            "id": 21,
+            "timeLimit": 190
+        },
+        {
+            "id": 22,
+            "timeLimit": 180
+        },
+        {
+            "id": 23,
+            "timeLimit": 170
+        },
+        {
+            "id": 24,
+            "timeLimit": 160
+        },
+        {
+            "id": 25,
+            "timeLimit": 150
+        },
+        {
+            "id": 26,
+            "timeLimit": 300
+        },
+        {
+            "id": 27,
+            "timeLimit": 290
+        },
+        {
+            "id": 28,
+            "timeLimit": 280
+        },
+        {
+            "id": 29,
+            "timeLimit": 270
+        },
+        {
+            "id": 30,
+            "timeLimit": 260
+        },
+        {
+            "id": 31,
+            "timeLimit": 250
+        },
+        {
+            "id": 32,
+            "timeLimit": 240
+        },
+        {
+            "id": 33,
+            "timeLimit": 230
+        },
+        {
+            "id": 34,
+            "timeLimit": 220
+        },
+        {
+            "id": 35,
+            "timeLimit": 210
+        },
+        {
+            "id": 36,
+            "timeLimit": 200
+        },
+        {
+            "id": 37,
+            "timeLimit": 190
+        },
+        {
+            "id": 38,
+            "timeLimit": 180
+        },
+        {
+            "id": 39,
+            "timeLimit": 170
+        },
+        {
+            "id": 40,
+            "timeLimit": 160
+        },
+        {
+            "id": 41,
+            "timeLimit": 150
+        },
+        {
+            "id": 42,
+            "timeLimit": 140
+        },
+        {
+            "id": 43,
+            "timeLimit": 130
+        },
+        {
+            "id": 44,
+            "timeLimit": 120
+        },
+        {
+            "id": 45,
+            "timeLimit": 110
+        },
+        {
+            "id": 46,
+            "timeLimit": 100
+        },
+        {
+            "id": 47,
+            "timeLimit": 95
+        },
+        {
+            "id": 48,
+            "timeLimit": 90
+        },
+        {
+            "id": 49,
+            "timeLimit": 85
+        },
+        {
+            "id": 50,
+            "timeLimit": 80
+        }
+    ],
+    "shop": {
+        "powerUps": [
+            {
+                "id": "skip",
+                "name": "skip",
+                "cost": 100,
+                "currency": "soft",
+                "icon": "icon_skip",
+                "description": "Skip this level entirely"
+            },
+            {
+                "id": "hint",
+                "name": "hint",
+                "cost": 50,
+                "currency": "soft",
+                "icon": "icon_hint",
+                "description": "Highlights a piece's correct position"
+            },
+            {
+                "id": "fitForce",
+                "name": "fitForce",
+                "cost": 3,
+                "currency": "hard",
+                "icon": "icon_force",
+                "description": "Force a piece to belong in its current spot"
+            },
+            {
+                "id": "slowTime",
+                "name": "slowTime",
+                "cost": 75,
+                "currency": "soft",
+                "icon": "icon_slow",
+                "description": "Slows down the timer for 15 seconds"
+            }
+        ]
+    },
+    "settings": {
+        "startSoftCurrency": 500,
+        "startHardCurrency": 10,
+        "winSoftReward": 50,
+        "winHardReward": 1,
+        "star3Pct": 0.6,
+        "star2Pct": 0.3,
+        "unplacedPieceGrayscale": 0.9
+    }
+}
