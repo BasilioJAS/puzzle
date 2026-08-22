@@ -1,0 +1,138 @@
+{
+  "id": "03",
+  "name": "En serio",
+  "image": "image.png",
+  "thumb": "thumb.png",
+  "cols": 4,
+  "rows": 4,
+  "timeSec": 200,
+  "ear": "classic",
+  "tabRatio": 1.0,
+  "seed": 3719311958,
+  "imageW": 640,
+  "imageH": 640,
+  "cellW": 160.0,
+  "cellH": 160.0,
+  "margin": 50,
+  "pieceW": 260,
+  "pieceH": 260,
+  "powerups": {
+    "tip": true,
+    "time": true
+  },
+  "tutorial": null,
+  "pieces": [
+    {
+      "col": 0,
+      "row": 0,
+      "file": "pieces/p_0_0.png",
+      "ox": -50.0,
+      "oy": -50.0
+    },
+    {
+      "col": 1,
+      "row": 0,
+      "file": "pieces/p_1_0.png",
+      "ox": 110.0,
+      "oy": -50.0
+    },
+    {
+      "col": 2,
+      "row": 0,
+      "file": "pieces/p_2_0.png",
+      "ox": 270.0,
+      "oy": -50.0
+    },
+    {
+      "col": 3,
+      "row": 0,
+      "file": "pieces/p_3_0.png",
+      "ox": 430.0,
+      "oy": -50.0
+    },
+    {
+      "col": 0,
+      "row": 1,
+      "file": "pieces/p_0_1.png",
+      "ox": -50.0,
+      "oy": 110.0
+    },
+    {
+      "col": 1,
+      "row": 1,
+      "file": "pieces/p_1_1.png",
+      "ox": 110.0,
+      "oy": 110.0
+    },
+    {
+      "col": 2,
+      "row": 1,
+      "file": "pieces/p_2_1.png",
+      "ox": 270.0,
+      "oy": 110.0
+    },
+    {
+      "col": 3,
+      "row": 1,
+      "file": "pieces/p_3_1.png",
+      "ox": 430.0,
+      "oy": 110.0
+    },
+    {
+      "col": 0,
+      "row": 2,
+      "file": "pieces/p_0_2.png",
+      "ox": -50.0,
+      "oy": 270.0
+    },
+    {
+      "col": 1,
+      "row": 2,
+      "file": "pieces/p_1_2.png",
+      "ox": 110.0,
+      "oy": 270.0
+    },
+    {
+      "col": 2,
+      "row": 2,
+      "file": "pieces/p_2_2.png",
+      "ox": 270.0,
+      "oy": 270.0
+    },
+    {
+      "col": 3,
+      "row": 2,
+      "file": "pieces/p_3_2.png",
+      "ox": 430.0,
+      "oy": 270.0
+    },
+    {
+      "col": 0,
+      "row": 3,
+      "file": "pieces/p_0_3.png",
+      "ox": -50.0,
+      "oy": 430.0
+    },
+    {
+      "col": 1,
+      "row": 3,
+      "file": "pieces/p_1_3.png",
+      "ox": 110.0,
+      "oy": 430.0
+    },
+    {
+      "col": 2,
+      "row": 3,
+      "file": "pieces/p_2_3.png",
+      "ox": 270.0,
+      "oy": 430.0
+    },
+    {
+      "col": 3,
+      "row": 3,
+      "file": "pieces/p_3_3.png",
+      "ox": 430.0,
+      "oy": 430.0
+    }
+  ]
+}

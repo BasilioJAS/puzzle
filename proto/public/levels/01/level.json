@@ -1,0 +1,59 @@
+{
+  "id": "01",
+  "name": "Primeros pasos",
+  "image": "image.png",
+  "thumb": "thumb.png",
+  "cols": 2,
+  "rows": 2,
+  "timeSec": 240,
+  "ear": "classic",
+  "tabRatio": 1.0,
+  "seed": 4223582056,
+  "imageW": 640,
+  "imageH": 640,
+  "cellW": 320.0,
+  "cellH": 320.0,
+  "margin": 98,
+  "pieceW": 516,
+  "pieceH": 516,
+  "powerups": {
+    "tip": true,
+    "time": true
+  },
+  "tutorial": {
+    "enabled": true,
+    "target": "tip",
+    "text": "¿Trabado? Tocá PISTA y una ficha se acomoda sola.",
+    "anim": "pulse"
+  },
+  "pieces": [
+    {
+      "col": 0,
+      "row": 0,
+      "file": "pieces/p_0_0.png",
+      "ox": -98.0,
+      "oy": -98.0
+    },
+    {
+      "col": 1,
+      "row": 0,
+      "file": "pieces/p_1_0.png",
+      "ox": 222.0,
+      "oy": -98.0
+    },
+    {
+      "col": 0,
+      "row": 1,
+      "file": "pieces/p_0_1.png",
+      "ox": -98.0,
+      "oy": 222.0
+    },
+    {
+      "col": 1,
+      "row": 1,
+      "file": "pieces/p_1_1.png",
+      "ox": 222.0,
+      "oy": 222.0
+    }
+  ]
+}

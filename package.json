@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "proto:dev": "vite --config proto/vite.config.ts --host",
+    "proto:build": "tsc -p proto/tsconfig.json && vite build --config proto/vite.config.ts",
+    "proto:preview": "vite preview --config proto/vite.config.ts --host"
   },
   "devDependencies": {
     "typescript": "^5.4.0",
