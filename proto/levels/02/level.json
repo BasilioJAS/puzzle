@@ -1,0 +1,94 @@
+{
+  "id": "02",
+  "name": "Calentando",
+  "image": "image.png",
+  "thumb": "thumb.png",
+  "cols": 3,
+  "rows": 3,
+  "timeSec": 210,
+  "ear": "classic",
+  "tabRatio": 1.0,
+  "seed": 1825580141,
+  "imageW": 639,
+  "imageH": 639,
+  "cellW": 213.0,
+  "cellH": 213.0,
+  "margin": 66,
+  "pieceW": 345,
+  "pieceH": 345,
+  "powerups": {
+    "tip": true,
+    "time": true
+  },
+  "tutorial": {
+    "enabled": true,
+    "target": "time",
+    "text": "Si te queda poco tiempo, tocá +TIEMPO para sumar segundos.",
+    "anim": "pulse"
+  },
+  "pieces": [
+    {
+      "col": 0,
+      "row": 0,
+      "file": "pieces/p_0_0.png",
+      "ox": -66.0,
+      "oy": -66.0
+    },
+    {
+      "col": 1,
+      "row": 0,
+      "file": "pieces/p_1_0.png",
+      "ox": 147.0,
+      "oy": -66.0
+    },
+    {
+      "col": 2,
+      "row": 0,
+      "file": "pieces/p_2_0.png",
+      "ox": 360.0,
+      "oy": -66.0
+    },
+    {
+      "col": 0,
+      "row": 1,
+      "file": "pieces/p_0_1.png",
+      "ox": -66.0,
+      "oy": 147.0
+    },
+    {
+      "col": 1,
+      "row": 1,
+      "file": "pieces/p_1_1.png",
+      "ox": 147.0,
+      "oy": 147.0
+    },
+    {
+      "col": 2,
+      "row": 1,
+      "file": "pieces/p_2_1.png",
+      "ox": 360.0,
+      "oy": 147.0
+    },
+    {
+      "col": 0,
+      "row": 2,
+      "file": "pieces/p_0_2.png",
+      "ox": -66.0,
+      "oy": 360.0
+    },
+    {
+      "col": 1,
+      "row": 2,
+      "file": "pieces/p_1_2.png",
+      "ox": 147.0,
+      "oy": 360.0
+    },
+    {
+      "col": 2,
+      "row": 2,
+      "file": "pieces/p_2_2.png",
+      "ox": 360.0,
+      "oy": 360.0
+    }
+  ]
+}
