@@ -68,6 +68,12 @@ Tres caminos, de menos a más independiente de la compu:
 - **Tutorial**: si el nivel lo tiene, aparece un popup, el botón indicado se anima y
   **queda todo bloqueado menos ese botón**; si tocás cualquier otra cosa suena el sonido de
   bloqueado. Se muestra una sola vez por nivel (queda guardado).
+- **Zoom y arrastre del tablero**: pellizco para acercar, un dedo sobre el tablero para
+  moverlo, doble tap para acercar/volver a ver todo, y un botón que vuelve al encuadre
+  original. En la compu también anda con la rueda del mouse. Los límites salen de
+  `gameplay.minZoom` / `maxZoom` / `doubleTapZoom`.
+- El tablero arranca **vacío**: no se muestra la imagen a completar de fondo. Se puede
+  volver a activar con `gameplay.showGhostImage` (y la grilla con `gameplay.showGrid`).
 - Se adapta a la pantalla: en vertical la bandeja va abajo, en apaisado a la derecha.
 
 ## Configuración

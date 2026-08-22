@@ -35,7 +35,8 @@ export interface GameConfig {
     shop: { startCoins: number; items: { id: string; amount: number; price: number; icon: string }[] };
     rewards: { coinsPerStar: number; coinsFirstClear: number };
     gameplay: {
-        showGhostImage: boolean; ghostAlpha: number;
+        showGhostImage: boolean; ghostAlpha: number; showGrid: boolean;
+        minZoom: number; maxZoom: number; doubleTapZoom: number;
         starThresholds: number[]; pieceShadow: boolean;
     };
     storageKey: string;

@@ -51,8 +51,11 @@ export async function gameScreen(host: HTMLElement, params: { id: string }): Pro
     // ---------- DOM ----------
     const clock = el('span', { class: 'chip' }, ico('clock'), mmss(level.timeSec));
     const canvas = el('canvas');
-    const playArea = el('div', { class: 'play-area' }, canvas);
+    const zoomBtn = el('button', { class: 'zoom-reset', title: 'ver todo' }, ico('zoomReset'));
+    const playArea = el('div', { class: 'play-area' }, canvas, zoomBtn);
     const puBar = el('div', { class: 'pu-bar' });
+    zoomBtn.style.display = 'none';
+    zoomBtn.addEventListener('click', () => { sfx('click'); resetView(); });
 
     const view = el('div', { class: 'screen game' },
         el('div', { class: 'topbar' },
@@ -98,6 +101,13 @@ export async function gameScreen(host: HTMLElement, params: { id: string }): Pro
     /** en apaisado la bandeja va a la derecha en vez de abajo */
     let trayVertical = false;
 
+    /** zona de la pantalla donde vive el tablero (todo menos la bandeja) */
+    let boardView: Rect = { x: 0, y: 0, w: 0, h: 0 };
+    /** escala a la que el tablero entra justo en boardView */
+    let baseScale = 1;
+    /** zoom y desplazamiento del tablero */
+    let zoom = 1, panX = 0, panY = 0;
+
     function layout(): void {
         const r = playArea.getBoundingClientRect();
         dpr = Math.min(window.devicePixelRatio || 1, 2.5);
@@ -121,13 +131,9 @@ export async function gameScreen(host: HTMLElement, params: { id: string }): Pro
             availW = cw - pad * 2;
             availH = ch - trayH - pad * 2;
         }
-        boardScale = Math.min(availW / level.imageW, availH / level.imageH);
-        const bw = level.imageW * boardScale, bh = level.imageH * boardScale;
-        board = {
-            x: pad + (availW - bw) / 2,
-            y: pad + (availH - bh) / 2,
-            w: bw, h: bh,
-        };
+        boardView = { x: pad, y: pad, w: availW, h: availH };
+        baseScale = Math.min(availW / level.imageW, availH / level.imageH);
+        applyView();
 
         const gap = m('trayGap');
         const across = (trayVertical ? tray.w : tray.h) - gap * 2;
@@ -135,7 +141,47 @@ export async function gameScreen(host: HTMLElement, params: { id: string }): Pro
         trayScale = fit / Math.max(level.pieceW, level.pieceH);
 
         relayoutTray();
+    }
+
+    /**
+     * Recalcula el rectángulo del tablero a partir del zoom y el desplazamiento.
+     * El desplazamiento se recorta para que el tablero no se pueda sacar de la
+     * pantalla: con zoom 1 queda clavado en el centro.
+     */
+    function applyView(): void {
+        const cfgP = cfg.gameplay;
+        zoom = Math.min(cfgP.maxZoom, Math.max(cfgP.minZoom, zoom));
+        boardScale = baseScale * zoom;
+        const w = level.imageW * boardScale, h = level.imageH * boardScale;
+        const maxX = Math.max(0, (w - boardView.w) / 2);
+        const maxY = Math.max(0, (h - boardView.h) / 2);
+        panX = Math.min(maxX, Math.max(-maxX, panX));
+        panY = Math.min(maxY, Math.max(-maxY, panY));
+        board = {
+            x: boardView.x + (boardView.w - w) / 2 + panX,
+            y: boardView.y + (boardView.h - h) / 2 + panY,
+            w, h,
+        };
         for (const p of pieces) if (p.placed) snapToBoard(p);
+        zoomBtn.style.display = zoom > cfg.gameplay.minZoom + 0.01 ? 'flex' : 'none';
+    }
+
+    /** Cambia el zoom manteniendo fijo el punto de la imagen que está bajo (sx, sy). */
+    function zoomAt(nextZoom: number, sx: number, sy: number): void {
+        const u = (sx - board.x) / boardScale;
+        const v = (sy - board.y) / boardScale;
+        zoom = Math.min(cfg.gameplay.maxZoom, Math.max(cfg.gameplay.minZoom, nextZoom));
+        boardScale = baseScale * zoom;
+        const w = level.imageW * boardScale, h = level.imageH * boardScale;
+        panX = sx - u * boardScale - (boardView.x + (boardView.w - w) / 2);
+        panY = sy - v * boardScale - (boardView.y + (boardView.h - h) / 2);
+        applyView();
+    }
+
+    function resetView(): void {
+        zoom = cfg.gameplay.minZoom;
+        panX = panY = 0;
+        applyView();
     }
 
     function relayoutTray(): void {
@@ -175,9 +221,14 @@ export async function gameScreen(host: HTMLElement, params: { id: string }): Pro
     // ---------- input ----------
     let dragging: Piece | null = null;
     let dragDX = 0, dragDY = 0;
-    let mode: 'none' | 'undecided' | 'drag' | 'scroll' = 'none';
+    let mode: 'none' | 'undecided' | 'drag' | 'scroll' | 'pan' | 'pinch' = 'none';
     let downX = 0, downY = 0, scrollStart = 0;
     let candidate: Piece | null = null;
+    let panStartX = 0, panStartY = 0;
+    /** punteros activos, para detectar el gesto de pellizco */
+    const pointers = new Map<number, { x: number; y: number }>();
+    let pinchDist = 0, pinchZoom = 1;
+    let lastTapMs = 0, lastTapX = 0, lastTapY = 0;
 
     const toCanvas = (e: PointerEvent) => {
         const r = canvas.getBoundingClientRect();
@@ -186,6 +237,10 @@ export async function gameScreen(host: HTMLElement, params: { id: string }): Pro
 
     const inTray = (x: number, y: number): boolean =>
         x >= tray.x && x <= tray.x + tray.w && y >= tray.y && y <= tray.y + tray.h;
+
+    const inBoardView = (x: number, y: number): boolean =>
+        !inTray(x, y) && x >= boardView.x && x <= boardView.x + boardView.w
+        && y >= boardView.y && y <= boardView.y + boardView.h;
 
     function hitPiece(x: number, y: number): Piece | null {
         // de adelante hacia atrás: la última dibujada es la de arriba
@@ -201,20 +256,46 @@ export async function gameScreen(host: HTMLElement, params: { id: string }): Pro
         return null;
     }
 
+    const midpoint = () => {
+        const [a, b] = [...pointers.values()];
+        return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, d: Math.hypot(a.x - b.x, a.y - b.y) };
+    };
+
+    function startPinch(): void {
+        // si veníamos arrastrando una ficha, la soltamos de vuelta en la bandeja
+        if (dragging) { dragging = null; relayoutTray(); }
+        candidate = null;
+        mode = 'pinch';
+        const mp = midpoint();
+        pinchDist = mp.d || 1;
+        pinchZoom = zoom;
+    }
+
     canvas.addEventListener('pointerdown', e => {
         if (over || tutorial.active || paused) return;
         canvas.setPointerCapture(e.pointerId);
         const { x, y } = toCanvas(e);
+        pointers.set(e.pointerId, { x, y });
+        if (pointers.size >= 2) { startPinch(); return; }
+
         downX = x; downY = y;
         candidate = hitPiece(x, y);
-        if (candidate) { mode = 'undecided'; }
+        if (candidate) mode = 'undecided';
         else if (inTray(x, y)) { mode = 'scroll'; scrollStart = trayScroll; }
+        else if (inBoardView(x, y)) { mode = 'pan'; panStartX = panX; panStartY = panY; }
         else mode = 'none';
     });
 
     canvas.addEventListener('pointermove', e => {
-        if (mode === 'none') return;
         const { x, y } = toCanvas(e);
+        if (pointers.has(e.pointerId)) pointers.set(e.pointerId, { x, y });
+
+        if (mode === 'pinch' && pointers.size >= 2) {
+            const mp = midpoint();
+            zoomAt(pinchZoom * (mp.d / pinchDist), mp.x, mp.y);
+            return;
+        }
+        if (mode === 'none') return;
         const dx = x - downX, dy = y - downY;
 
         if (mode === 'undecided') {
@@ -237,7 +318,11 @@ export async function gameScreen(host: HTMLElement, params: { id: string }): Pro
             }
         }
 
-        if (mode === 'scroll') {
+        if (mode === 'pan') {
+            panX = panStartX + dx;
+            panY = panStartY + dy;
+            applyView();
+        } else if (mode === 'scroll') {
             trayScroll = scrollStart - (trayVertical ? dy : dx);
             relayoutTray();
         } else if (mode === 'drag' && dragging) {
@@ -246,13 +331,41 @@ export async function gameScreen(host: HTMLElement, params: { id: string }): Pro
         }
     });
 
-    const endDrag = () => {
+    const endPointer = (e: PointerEvent) => {
+        pointers.delete(e.pointerId);
+        if (mode === 'pinch') {
+            // el pellizco termina cuando queda un solo dedo
+            if (pointers.size < 2) mode = 'none';
+            return;
+        }
+        // doble tap sobre el tablero: acerca, o vuelve a ver todo si ya estaba cerca
+        if ((mode === 'undecided' || mode === 'pan') && Math.hypot(
+            (toCanvas(e).x - downX), (toCanvas(e).y - downY)) < 8) {
+            const now = performance.now();
+            const { x, y } = toCanvas(e);
+            if (now - lastTapMs < 320 && Math.hypot(x - lastTapX, y - lastTapY) < 32 && inBoardView(x, y)) {
+                if (zoom > cfg.gameplay.minZoom + 0.01) resetView();
+                else zoomAt(cfg.gameplay.doubleTapZoom, x, y);
+                lastTapMs = 0;
+            } else {
+                lastTapMs = now; lastTapX = x; lastTapY = y;
+            }
+        }
         if (mode === 'drag' && dragging) drop(dragging);
         dragging = null; candidate = null; mode = 'none';
         relayoutTray();
     };
-    canvas.addEventListener('pointerup', endDrag);
-    canvas.addEventListener('pointercancel', endDrag);
+    canvas.addEventListener('pointerup', endPointer);
+    canvas.addEventListener('pointercancel', endPointer);
+
+    // rueda del mouse / trackpad, para probar en la compu
+    canvas.addEventListener('wheel', e => {
+        if (over || tutorial.active) return;
+        const { x, y } = toCanvas(e as unknown as PointerEvent);
+        if (!inBoardView(x, y)) return;
+        e.preventDefault();
+        zoomAt(zoom * (e.deltaY < 0 ? 1.12 : 1 / 1.12), x, y);
+    }, { passive: false });
 
     function drop(p: Piece): void {
         // la comparación se hace con la ficha ya a escala de tablero
@@ -428,8 +541,11 @@ export async function gameScreen(host: HTMLElement, params: { id: string }): Pro
     function draw(now: number): void {
         g.clearRect(0, 0, cw, ch);
 
-        // tablero
+        // tablero (recortado a su zona, para que el zoom no invada la bandeja)
         g.save();
+        g.beginPath();
+        g.rect(boardView.x, boardView.y, boardView.w, boardView.h);
+        g.clip();
         g.fillStyle = cfg.colors.panel;
         roundRect(g, board.x, board.y, board.w, board.h, m('radiusSmall'));
         g.fill();
@@ -440,11 +556,11 @@ export async function gameScreen(host: HTMLElement, params: { id: string }): Pro
         }
         g.strokeStyle = cfg.colors.boardGrid;
         g.lineWidth = 1;
-        for (let c = 1; c < level.cols; c++) {
+        for (let c = 1; cfg.gameplay.showGrid && c < level.cols; c++) {
             const x = board.x + c * level.cellW * boardScale;
             g.beginPath(); g.moveTo(x, board.y); g.lineTo(x, board.y + board.h); g.stroke();
         }
-        for (let r = 1; r < level.rows; r++) {
+        for (let r = 1; cfg.gameplay.showGrid && r < level.rows; r++) {
             const y = board.y + r * level.cellH * boardScale;
             g.beginPath(); g.moveTo(board.x, y); g.lineTo(board.x + board.w, y); g.stroke();
         }
@@ -460,8 +576,13 @@ export async function gameScreen(host: HTMLElement, params: { id: string }): Pro
         for (const p of pieces) if (!p.placed && p !== dragging) drawPiece(g, p, now);
         g.restore();
 
-        // fichas ya colocadas
+        // fichas ya colocadas (dentro del recorte del tablero)
+        g.save();
+        g.beginPath();
+        g.rect(boardView.x, boardView.y, boardView.w, boardView.h);
+        g.clip();
         for (const p of pieces) if (p.placed) drawPiece(g, p, now);
+        g.restore();
         // la que se está arrastrando siempre arriba de todo
         if (dragging) drawPiece(g, dragging, now);
 
@@ -505,7 +626,8 @@ export async function gameScreen(host: HTMLElement, params: { id: string }): Pro
     // ayuda para probar desde afuera (consola del navegador / tests)
     (window as any).__puzzle = {
         level, pieces,
-        rects: () => ({ board, tray, boardScale, trayScale }),
+        rects: () => ({ board, boardView, tray, boardScale, trayScale, zoom, panX, panY }),
+        zoomTo: (z: number) => { zoom = z; applyView(); },
         place: (col: number, row: number) => {
             const p = pieces.find(q => q.def.col === col && q.def.row === row);
             if (p && !p.placed) place(p);

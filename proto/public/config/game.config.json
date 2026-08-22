@@ -73,6 +73,7 @@
     "hint": "💡",
     "time": "⏳",
     "restart": "↻",
+    "zoomReset": "⤢",
     "next": "»",
     "check": "✓",
     "logo": "🧩",
@@ -200,8 +201,12 @@
   },
 
   "gameplay": {
-    "showGhostImage": true,
+    "showGhostImage": false,
     "ghostAlpha": 0.12,
+    "showGrid": true,
+    "minZoom": 1,
+    "maxZoom": 4,
+    "doubleTapZoom": 2.2,
     "starThresholds": [0.55, 0.25, 0.0],
     "shuffleSeedFromLevel": true,
     "pieceShadow": true
