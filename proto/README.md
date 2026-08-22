@@ -134,3 +134,17 @@ nivel elige la suya con el campo `ear` de su `level.json`.
 - No hay rotación de fichas ni encastre entre fichas sueltas.
 - Música y efectos son sintetizados, no hay archivos de audio.
 - Un solo idioma (`text.es`), aunque la estructura ya soporta más.
+
+## Build de un solo archivo (sin servidor)
+
+```bash
+npm run proto:artifact     # deja dist-artifact/puzzle-proto.html
+```
+
+Empaqueta **solo el juego** en un único HTML autocontenido (~10 MB): config, niveles
+y fichas van embebidos como data URIs, así que no hace ni un pedido de red. Sirve para
+abrirlo desde cualquier lado sin servidor, o para publicarlo como página suelta.
+
+Las fichas van tal cual, PNG con transparencia; la imagen guía del tablero se
+re-comprime a JPEG (no necesita alfa) para que el archivo no se vaya de tamaño.
+Los editores no entran en este build: viven en sus propias páginas.
