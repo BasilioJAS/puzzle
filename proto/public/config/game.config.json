@@ -1,0 +1,245 @@
+{
+  "app": {
+    "title": "Puzzle Proto",
+    "subtitle": "prototipo",
+    "version": "0.1.0",
+    "defaultLang": "es"
+  },
+
+  "colors": {
+    "bg": "#101326",
+    "bgAlt": "#181d3a",
+    "panel": "#1e2447",
+    "panelAlt": "#272f5c",
+    "accent": "#ffb03a",
+    "accent2": "#3ad6ff",
+    "text": "#f2f4ff",
+    "textDim": "#9aa2cc",
+    "good": "#4be08a",
+    "bad": "#ff5d6c",
+    "lock": "#4a5183",
+    "boardGrid": "rgba(255,255,255,0.14)",
+    "boardGhost": "rgba(255,255,255,0.10)",
+    "overlay": "rgba(6,8,20,0.78)",
+    "tutorialDim": "rgba(6,8,20,0.82)"
+  },
+
+  "metrics": {
+    "designWidth": 420,
+    "maxAppWidth": 560,
+    "safePadding": 12,
+    "radius": 16,
+    "radiusSmall": 10,
+    "hudHeight": 52,
+    "buttonHeight": 56,
+    "buttonHeightSmall": 44,
+    "menuButtonGap": 14,
+    "fontBase": 16,
+    "fontTitle": 34,
+    "fontHuge": 46,
+    "fontSmall": 13,
+    "trayHeightRatio": 0.24,
+    "trayWidthRatio": 0.24,
+    "landscapeAspect": 1.25,
+    "trayPieceMax": 130,
+    "trayGap": 10,
+    "boardPadding": 10,
+    "snapRadiusRatio": 0.42,
+    "pickScale": 1.12,
+    "levelNodeSize": 62,
+    "levelNodeGap": 118,
+    "levelPathAmplitude": 0.28,
+    "levelPathWidth": 10,
+    "filterChipHeight": 34,
+    "filterGap": 6,
+    "powerupSize": 60,
+    "powerupGap": 12,
+    "splashMinMs": 900,
+    "splashFadeMs": 350
+  },
+
+  "icons": {
+    "play": "▶",
+    "shop": "🛒",
+    "about": "ℹ",
+    "back": "‹",
+    "close": "✕",
+    "music": "♪",
+    "sfx": "🔊",
+    "vibration": "📳",
+    "star": "★",
+    "starEmpty": "☆",
+    "lock": "🔒",
+    "clock": "⏱",
+    "coin": "🪙",
+    "hint": "💡",
+    "time": "⏳",
+    "restart": "↻",
+    "zoomReset": "⤢",
+    "filterEdge": "▢",
+    "filterInner": "▪",
+    "next": "»",
+    "check": "✓",
+    "logo": "🧩",
+    "pieces": "🧩"
+  },
+
+  "text": {
+    "es": {
+      "tapToStart": "tocá para empezar",
+      "loading": "cargando…",
+      "play": "JUGAR",
+      "shop": "TIENDA",
+      "about": "ACERCA DE",
+      "music": "Música",
+      "sfx": "Sonido",
+      "vibration": "Vibración",
+      "on": "SÍ",
+      "off": "NO",
+      "levels": "NIVELES",
+      "level": "Nivel",
+      "locked": "Bloqueado",
+      "pieces": "fichas",
+      "time": "tiempo",
+      "best": "mejor",
+      "win": "¡COMPLETADO!",
+      "lose": "SE ACABÓ EL TIEMPO",
+      "retry": "REINTENTAR",
+      "nextLevel": "SIGUIENTE",
+      "toMap": "MAPA",
+      "resume": "SEGUIR",
+      "quit": "SALIR",
+      "paused": "PAUSA",
+      "coins": "monedas",
+      "buy": "COMPRAR",
+      "owned": "×",
+      "noCoins": "No te alcanza",
+      "bought": "¡Comprado!",
+      "shopHint": "Comprá power-ups para usarlos en cualquier nivel.",
+      "have": "Tenés",
+      "aboutTitle": "ACERCA DE",
+      "aboutBody": "Prototipo de rompecabezas.\nHTML + TypeScript, sin engine.\nLas fichas son PNG con transparencia generados por la tool.\nEditores incluidos: niveles y orejas.",
+      "aboutCredits": "prototipo interno — no pulido",
+      "tutorialNext": "ENTENDIDO",
+      "puTip": "Pista",
+      "puTime": "+Tiempo",
+      "puNone": "Sin usos",
+      "timeAdded": "+{n}s",
+      "filterAll": "Todas",
+      "filterEdge": "Bordes",
+      "filterInner": "Interior",
+      "filterEmpty": "Ninguna ficha con ese filtro",
+      "customLevels": "Niveles propios",
+      "editorLink": "Editor de niveles",
+      "earsLink": "Editor de orejas"
+    }
+  },
+
+  "audio": {
+    "musicEnabledDefault": true,
+    "sfxEnabledDefault": true,
+    "musicVolume": 0.22,
+    "sfxVolume": 0.45,
+    "music": {
+      "bpm": 82,
+      "wave": "triangle",
+      "notes": [220, 261.63, 329.63, 261.63, 196, 246.94, 293.66, 246.94]
+    },
+    "sfx": {
+      "click":   { "wave": "square",   "freq": 660, "to": 880,  "dur": 0.06, "gain": 0.5 },
+      "back":    { "wave": "square",   "freq": 520, "to": 330,  "dur": 0.08, "gain": 0.5 },
+      "pick":    { "wave": "sine",     "freq": 440, "to": 560,  "dur": 0.06, "gain": 0.4 },
+      "snap":    { "wave": "triangle", "freq": 780, "to": 1180, "dur": 0.12, "gain": 0.6 },
+      "wrong":   { "wave": "sawtooth", "freq": 200, "to": 140,  "dur": 0.12, "gain": 0.35 },
+      "blocked": { "wave": "square",   "freq": 150, "to": 110,  "dur": 0.14, "gain": 0.4 },
+      "win":     { "wave": "triangle", "freq": 523, "to": 1046, "dur": 0.45, "gain": 0.6 },
+      "lose":    { "wave": "sawtooth", "freq": 330, "to": 110,  "dur": 0.5,  "gain": 0.45 },
+      "coin":    { "wave": "square",   "freq": 880, "to": 1320, "dur": 0.1,  "gain": 0.45 },
+      "powerup": { "wave": "sine",     "freq": 620, "to": 1240, "dur": 0.22, "gain": 0.5 },
+      "unlock":  { "wave": "triangle", "freq": 392, "to": 784,  "dur": 0.3,  "gain": 0.5 }
+    }
+  },
+
+  "haptics": {
+    "enabledDefault": true,
+    "patterns": {
+      "tap": [12],
+      "snap": [22],
+      "wrong": [8, 40, 8],
+      "blocked": [30],
+      "win": [30, 60, 30, 60, 90],
+      "lose": [120]
+    }
+  },
+
+  "powerups": {
+    "order": ["tip", "time"],
+    "tip": {
+      "id": "tip",
+      "icon": "hint",
+      "labelKey": "puTip",
+      "startCount": 3,
+      "price": 60,
+      "highlightMs": 1800,
+      "autoPlace": true
+    },
+    "time": {
+      "id": "time",
+      "icon": "time",
+      "labelKey": "puTime",
+      "startCount": 3,
+      "price": 40,
+      "addSeconds": 30
+    }
+  },
+
+  "filters": {
+    "enabled": true,
+    "shape": true,
+    "color": true,
+    "sampleSize": 24,
+    "neutralSaturation": 0.12,
+    "neutralWeight": 0.06,
+    "minPiecesPerColor": 2,
+    "colors": [
+      { "id": "rojo",     "label": "Rojo",     "swatch": "#e8523f", "from": 345, "to": 15 },
+      { "id": "naranja",  "label": "Naranja",  "swatch": "#f0913a", "from": 15,  "to": 45 },
+      { "id": "amarillo", "label": "Amarillo", "swatch": "#f2d24b", "from": 45,  "to": 70 },
+      { "id": "verde",    "label": "Verde",    "swatch": "#5ec46a", "from": 70,  "to": 160 },
+      { "id": "celeste",  "label": "Celeste",  "swatch": "#4ec9e0", "from": 160, "to": 200 },
+      { "id": "azul",     "label": "Azul",     "swatch": "#4a7fe0", "from": 200, "to": 255 },
+      { "id": "violeta",  "label": "Violeta",  "swatch": "#9a6ee0", "from": 255, "to": 290 },
+      { "id": "rosa",     "label": "Rosa",     "swatch": "#e86ba8", "from": 290, "to": 345 },
+      { "id": "neutro",   "label": "Neutro",   "swatch": "#b9c0dd", "neutral": true }
+    ]
+  },
+
+  "shop": {
+    "startCoins": 200,
+    "items": [
+      { "id": "tip",  "amount": 1, "price": 60,  "icon": "hint" },
+      { "id": "tip",  "amount": 5, "price": 250, "icon": "hint" },
+      { "id": "time", "amount": 1, "price": 40,  "icon": "time" },
+      { "id": "time", "amount": 5, "price": 170, "icon": "time" }
+    ]
+  },
+
+  "rewards": {
+    "coinsPerStar": 25,
+    "coinsFirstClear": 50
+  },
+
+  "gameplay": {
+    "showGhostImage": false,
+    "ghostAlpha": 0.12,
+    "showGrid": true,
+    "minZoom": 1,
+    "maxZoom": 4,
+    "doubleTapZoom": 2.2,
+    "starThresholds": [0.55, 0.25, 0.0],
+    "shuffleSeedFromLevel": true,
+    "pieceShadow": true
+  },
+
+  "storageKey": "puzzle-proto-save-v1"
+}

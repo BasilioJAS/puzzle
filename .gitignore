@@ -3,3 +3,6 @@
 /tools/test_masks/
 /tools/test_pieces/
 /dist/
+/dist-proto/
+/dist-artifact/
+__pycache__/

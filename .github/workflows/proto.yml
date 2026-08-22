@@ -1,0 +1,44 @@
+name: Deploy prototipo
+
+# Publica el prototipo (carpeta proto/) en https://basiliojas.github.io/puzzle/proto/
+# para poder probarlo desde el teléfono sin pasar por la compu.
+on:
+  push:
+    branches:
+      - 'claude/puzzle-game-prototype-**'
+    paths:
+      - 'proto/**'
+      - '.github/workflows/proto.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: 'pages-proto'
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Build prototipo
+        run: npm run proto:build
+
+      - name: Deploy a gh-pages/proto
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist-proto
+          publish_branch: gh-pages
+          destination_dir: proto
+          keep_files: false
