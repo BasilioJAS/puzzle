@@ -41,15 +41,3 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
         i.src = src;
     });
 }
-
-/** Baja la resolución del alfa de una imagen para hacer hit-test barato. */
-export function alphaMask(img: HTMLImageElement, size = 40): { w: number; h: number; data: Uint8Array } {
-    const cv = document.createElement('canvas');
-    cv.width = size; cv.height = size;
-    const g = cv.getContext('2d', { willReadFrequently: true })!;
-    g.drawImage(img, 0, 0, size, size);
-    const px = g.getImageData(0, 0, size, size).data;
-    const out = new Uint8Array(size * size);
-    for (let i = 0; i < out.length; i++) out[i] = px[i * 4 + 3];
-    return { w: size, h: size, data: out };
-}

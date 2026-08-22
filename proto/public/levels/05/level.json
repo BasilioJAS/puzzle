@@ -9,13 +9,13 @@
   "ear": "classic",
   "tabRatio": 1.0,
   "seed": 2556641740,
-  "imageW": 510,
-  "imageH": 510,
-  "cellW": 85.0,
-  "cellH": 85.0,
-  "margin": 28,
-  "pieceW": 141,
-  "pieceH": 141,
+  "imageW": 636,
+  "imageH": 636,
+  "cellW": 106.0,
+  "cellH": 106.0,
+  "margin": 34,
+  "pieceW": 174,
+  "pieceH": 174,
   "powerups": {
     "tip": true,
     "time": true
@@ -26,253 +26,253 @@
       "col": 0,
       "row": 0,
       "file": "pieces/p_0_0.png",
-      "ox": -28.0,
-      "oy": -28.0
+      "ox": -34.0,
+      "oy": -34.0
     },
     {
       "col": 1,
       "row": 0,
       "file": "pieces/p_1_0.png",
-      "ox": 57.0,
-      "oy": -28.0
+      "ox": 72.0,
+      "oy": -34.0
     },
     {
       "col": 2,
       "row": 0,
       "file": "pieces/p_2_0.png",
-      "ox": 142.0,
-      "oy": -28.0
+      "ox": 178.0,
+      "oy": -34.0
     },
     {
       "col": 3,
       "row": 0,
       "file": "pieces/p_3_0.png",
-      "ox": 227.0,
-      "oy": -28.0
+      "ox": 284.0,
+      "oy": -34.0
     },
     {
       "col": 4,
       "row": 0,
       "file": "pieces/p_4_0.png",
-      "ox": 312.0,
-      "oy": -28.0
+      "ox": 390.0,
+      "oy": -34.0
     },
     {
       "col": 5,
       "row": 0,
       "file": "pieces/p_5_0.png",
-      "ox": 397.0,
-      "oy": -28.0
+      "ox": 496.0,
+      "oy": -34.0
     },
     {
       "col": 0,
       "row": 1,
       "file": "pieces/p_0_1.png",
-      "ox": -28.0,
-      "oy": 57.0
+      "ox": -34.0,
+      "oy": 72.0
     },
     {
       "col": 1,
       "row": 1,
       "file": "pieces/p_1_1.png",
-      "ox": 57.0,
-      "oy": 57.0
+      "ox": 72.0,
+      "oy": 72.0
     },
     {
       "col": 2,
       "row": 1,
       "file": "pieces/p_2_1.png",
-      "ox": 142.0,
-      "oy": 57.0
+      "ox": 178.0,
+      "oy": 72.0
     },
     {
       "col": 3,
       "row": 1,
       "file": "pieces/p_3_1.png",
-      "ox": 227.0,
-      "oy": 57.0
+      "ox": 284.0,
+      "oy": 72.0
     },
     {
       "col": 4,
       "row": 1,
       "file": "pieces/p_4_1.png",
-      "ox": 312.0,
-      "oy": 57.0
+      "ox": 390.0,
+      "oy": 72.0
     },
     {
       "col": 5,
       "row": 1,
       "file": "pieces/p_5_1.png",
-      "ox": 397.0,
-      "oy": 57.0
+      "ox": 496.0,
+      "oy": 72.0
     },
     {
       "col": 0,
       "row": 2,
       "file": "pieces/p_0_2.png",
-      "ox": -28.0,
-      "oy": 142.0
+      "ox": -34.0,
+      "oy": 178.0
     },
     {
       "col": 1,
       "row": 2,
       "file": "pieces/p_1_2.png",
-      "ox": 57.0,
-      "oy": 142.0
+      "ox": 72.0,
+      "oy": 178.0
     },
     {
       "col": 2,
       "row": 2,
       "file": "pieces/p_2_2.png",
-      "ox": 142.0,
-      "oy": 142.0
+      "ox": 178.0,
+      "oy": 178.0
     },
     {
       "col": 3,
       "row": 2,
       "file": "pieces/p_3_2.png",
-      "ox": 227.0,
-      "oy": 142.0
+      "ox": 284.0,
+      "oy": 178.0
     },
     {
       "col": 4,
       "row": 2,
       "file": "pieces/p_4_2.png",
-      "ox": 312.0,
-      "oy": 142.0
+      "ox": 390.0,
+      "oy": 178.0
     },
     {
       "col": 5,
       "row": 2,
       "file": "pieces/p_5_2.png",
-      "ox": 397.0,
-      "oy": 142.0
+      "ox": 496.0,
+      "oy": 178.0
     },
     {
       "col": 0,
       "row": 3,
       "file": "pieces/p_0_3.png",
-      "ox": -28.0,
-      "oy": 227.0
+      "ox": -34.0,
+      "oy": 284.0
     },
     {
       "col": 1,
       "row": 3,
       "file": "pieces/p_1_3.png",
-      "ox": 57.0,
-      "oy": 227.0
+      "ox": 72.0,
+      "oy": 284.0
     },
     {
       "col": 2,
       "row": 3,
       "file": "pieces/p_2_3.png",
-      "ox": 142.0,
-      "oy": 227.0
+      "ox": 178.0,
+      "oy": 284.0
     },
     {
       "col": 3,
       "row": 3,
       "file": "pieces/p_3_3.png",
-      "ox": 227.0,
-      "oy": 227.0
+      "ox": 284.0,
+      "oy": 284.0
     },
     {
       "col": 4,
       "row": 3,
       "file": "pieces/p_4_3.png",
-      "ox": 312.0,
-      "oy": 227.0
+      "ox": 390.0,
+      "oy": 284.0
     },
     {
       "col": 5,
       "row": 3,
       "file": "pieces/p_5_3.png",
-      "ox": 397.0,
-      "oy": 227.0
+      "ox": 496.0,
+      "oy": 284.0
     },
     {
       "col": 0,
       "row": 4,
       "file": "pieces/p_0_4.png",
-      "ox": -28.0,
-      "oy": 312.0
+      "ox": -34.0,
+      "oy": 390.0
     },
     {
       "col": 1,
       "row": 4,
       "file": "pieces/p_1_4.png",
-      "ox": 57.0,
-      "oy": 312.0
+      "ox": 72.0,
+      "oy": 390.0
     },
     {
       "col": 2,
       "row": 4,
       "file": "pieces/p_2_4.png",
-      "ox": 142.0,
-      "oy": 312.0
+      "ox": 178.0,
+      "oy": 390.0
     },
     {
       "col": 3,
       "row": 4,
       "file": "pieces/p_3_4.png",
-      "ox": 227.0,
-      "oy": 312.0
+      "ox": 284.0,
+      "oy": 390.0
     },
     {
       "col": 4,
       "row": 4,
       "file": "pieces/p_4_4.png",
-      "ox": 312.0,
-      "oy": 312.0
+      "ox": 390.0,
+      "oy": 390.0
     },
     {
       "col": 5,
       "row": 4,
       "file": "pieces/p_5_4.png",
-      "ox": 397.0,
-      "oy": 312.0
+      "ox": 496.0,
+      "oy": 390.0
     },
     {
       "col": 0,
       "row": 5,
       "file": "pieces/p_0_5.png",
-      "ox": -28.0,
-      "oy": 397.0
+      "ox": -34.0,
+      "oy": 496.0
     },
     {
       "col": 1,
       "row": 5,
       "file": "pieces/p_1_5.png",
-      "ox": 57.0,
-      "oy": 397.0
+      "ox": 72.0,
+      "oy": 496.0
     },
     {
       "col": 2,
       "row": 5,
       "file": "pieces/p_2_5.png",
-      "ox": 142.0,
-      "oy": 397.0
+      "ox": 178.0,
+      "oy": 496.0
     },
     {
       "col": 3,
       "row": 5,
       "file": "pieces/p_3_5.png",
-      "ox": 227.0,
-      "oy": 397.0
+      "ox": 284.0,
+      "oy": 496.0
     },
     {
       "col": 4,
       "row": 5,
       "file": "pieces/p_4_5.png",
-      "ox": 312.0,
-      "oy": 397.0
+      "ox": 390.0,
+      "oy": 496.0
     },
     {
       "col": 5,
       "row": 5,
       "file": "pieces/p_5_5.png",
-      "ox": 397.0,
-      "oy": 397.0
+      "ox": 496.0,
+      "oy": 496.0
     }
   ]
 }

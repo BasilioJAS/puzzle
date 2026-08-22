@@ -4,6 +4,7 @@
  * Ningún otro archivo debería tener literales de UI.
  */
 import type { EarLibrary } from '../puzzle/ears';
+import type { ColorBucket } from '../puzzle/analyze';
 
 export interface PowerUpConfig {
     id: string;
@@ -32,6 +33,12 @@ export interface GameConfig {
     };
     haptics: { enabledDefault: boolean; patterns: Record<string, number[]> };
     powerups: { order: string[] } & Record<string, any>;
+    filters: {
+        enabled: boolean; shape: boolean; color: boolean;
+        sampleSize: number; neutralSaturation: number; neutralWeight: number;
+        minPiecesPerColor: number;
+        colors: ColorBucket[];
+    };
     shop: { startCoins: number; items: { id: string; amount: number; price: number; icon: string }[] };
     rewards: { coinsPerStar: number; coinsFirstClear: number };
     gameplay: {
@@ -127,6 +134,7 @@ const KEBAB: Record<string, string> = {
     menuButtonGap: 'menu-gap', fontBase: 'font-base', fontTitle: 'font-title',
     fontHuge: 'font-huge', fontSmall: 'font-small', levelNodeSize: 'node-size',
     powerupSize: 'pu-size', powerupGap: 'pu-gap',
+    filterChipHeight: 'filter-chip-h', filterGap: 'filter-gap',
 };
 
 export function applyTheme(cfg: GameConfig): void {

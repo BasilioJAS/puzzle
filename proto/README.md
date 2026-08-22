@@ -72,6 +72,12 @@ Tres caminos, de menos a más independiente de la compu:
   moverlo, doble tap para acercar/volver a ver todo, y un botón que vuelve al encuadre
   original. En la compu también anda con la rueda del mouse. Los límites salen de
   `gameplay.minZoom` / `maxZoom` / `doubleTapZoom`.
+- **Filtros de la bandeja**: por forma (bordes / interior, sale de la posición de la
+  ficha en la grilla) y por color dominante. El color se calcula al cargar cada ficha,
+  en la misma pasada de píxeles que arma la máscara del hit-test, así que anda también
+  con los niveles hechos en el editor. Los baldes de color, sus rangos de tono y los
+  umbrales están en `filters` del config; sólo se muestran los colores que el nivel
+  realmente tiene (`minPiecesPerColor`).
 - El tablero arranca **vacío**: no se muestra la imagen a completar de fondo. Se puede
   volver a activar con `gameplay.showGhostImage` (y la grilla con `gameplay.showGrid`).
 - Se adapta a la pantalla: en vertical la bandeja va abajo, en apaisado a la derecha.

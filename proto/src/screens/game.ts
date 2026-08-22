@@ -8,7 +8,8 @@ import {
     C, ORDER, ico, m, t, customLevelIds,
     loadLevel, levelAsset, type LevelConfig, type PieceDef,
 } from '../config';
-import { alphaMask, el, loadImage, mmss } from '../core/dom';
+import { el, loadImage, mmss } from '../core/dom';
+import { analyzePiece, type ColorBucket } from '../puzzle/analyze';
 import { go } from '../core/router';
 import { sfx } from '../core/audio';
 import { vibrate } from '../core/haptics';
@@ -19,6 +20,10 @@ interface Piece {
     img: HTMLImageElement;
     mask: { w: number; h: number; data: Uint8Array };
     placed: boolean;
+    /** id del balde de color dominante, para el filtro */
+    color: string | null;
+    /** true cuando un filtro la sacó de la bandeja */
+    hidden: boolean;
     /** posición actual del vértice superior izquierdo, en px de canvas */
     x: number;
     y: number;
@@ -39,20 +44,31 @@ export async function gameScreen(host: HTMLElement, params: { id: string }): Pro
         ...level.pieces.map(p => loadImage(levelAsset(level, p.file))),
     ]);
 
-    const pieces: Piece[] = level.pieces.map((def, i) => ({
-        def,
-        img: pieceImgs[i],
-        mask: alphaMask(pieceImgs[i]),
-        placed: false,
-        x: 0, y: 0, s: 1,
-        flashUntil: 0,
-    }));
+    const fcfg = cfg.filters;
+    const pieces: Piece[] = level.pieces.map((def, i) => {
+        const a = analyzePiece(pieceImgs[i], fcfg.colors, {
+            size: fcfg.sampleSize,
+            neutralSaturation: fcfg.neutralSaturation,
+            neutralWeight: fcfg.neutralWeight,
+        });
+        return {
+            def,
+            img: pieceImgs[i],
+            mask: a.mask,
+            color: a.color,
+            hidden: false,
+            placed: false,
+            x: 0, y: 0, s: 1,
+            flashUntil: 0,
+        };
+    });
 
     // ---------- DOM ----------
     const clock = el('span', { class: 'chip' }, ico('clock'), mmss(level.timeSec));
     const canvas = el('canvas');
     const zoomBtn = el('button', { class: 'zoom-reset', title: 'ver todo' }, ico('zoomReset'));
     const playArea = el('div', { class: 'play-area' }, canvas, zoomBtn);
+    const filterBar = el('div', { class: 'filter-bar' });
     const puBar = el('div', { class: 'pu-bar' });
     zoomBtn.style.display = 'none';
     zoomBtn.addEventListener('click', () => { sfx('click'); resetView(); });
@@ -67,9 +83,77 @@ export async function gameScreen(host: HTMLElement, params: { id: string }): Pro
             clock,
         ),
         playArea,
+        filterBar,
         puBar,
     );
     host.append(view);
+
+    // ---------- filtros de la bandeja ----------
+    let filterShape: 'all' | 'edge' | 'inner' = 'all';
+    let filterColor: string | null = null;
+
+    /** una ficha es de borde si toca cualquiera de los cuatro lados del tablero */
+    const isEdge = (p: Piece): boolean =>
+        p.def.col === 0 || p.def.row === 0
+        || p.def.col === level.cols - 1 || p.def.row === level.rows - 1;
+
+    const passesFilter = (p: Piece): boolean => {
+        if (filterShape === 'edge' && !isEdge(p)) return false;
+        if (filterShape === 'inner' && isEdge(p)) return false;
+        if (filterColor && p.color !== filterColor) return false;
+        return true;
+    };
+
+    function buildFilterBar(): void {
+        if (!fcfg.enabled) { filterBar.remove(); return; }
+
+        const chips: { node: HTMLElement; active: () => boolean }[] = [];
+        const add = (node: HTMLElement, active: () => boolean) => {
+            chips.push({ node, active });
+            filterBar.append(node);
+        };
+        const repaint = () => {
+            for (const c of chips) {
+                const on = c.active();
+                c.node.classList.toggle('on', on);
+                // que el chip activo quede a la vista aunque la barra esté scrolleada
+                if (on) c.node.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+            }
+            relayoutTray();
+        };
+        const pick = (fn: () => void) => () => { sfx('click'); vibrate('tap'); fn(); repaint(); };
+
+        add(el('button', { class: 'chip-f', onclick: pick(() => { filterShape = 'all'; filterColor = null; }) },
+            t('filterAll')), () => filterShape === 'all' && !filterColor);
+
+        if (fcfg.shape) {
+            add(el('button', { class: 'chip-f', onclick: pick(() => { filterShape = filterShape === 'edge' ? 'all' : 'edge'; }) },
+                ico('filterEdge'), t('filterEdge')), () => filterShape === 'edge');
+            add(el('button', { class: 'chip-f', onclick: pick(() => { filterShape = filterShape === 'inner' ? 'all' : 'inner'; }) },
+                ico('filterInner'), t('filterInner')), () => filterShape === 'inner');
+        }
+
+        if (fcfg.color) {
+            // sólo se muestran los colores que este nivel realmente tiene
+            const count = new Map<string, number>();
+            for (const p of pieces) if (p.color) count.set(p.color, (count.get(p.color) ?? 0) + 1);
+            const present = fcfg.colors.filter((b: ColorBucket) =>
+                (count.get(b.id) ?? 0) >= fcfg.minPiecesPerColor);
+            if (present.length > 1) {
+                filterBar.append(el('span', { class: 'chip-sep' }));
+                for (const b of present) {
+                    const node = el('button', { class: 'chip-f swatch', title: b.label },
+                        el('i', { style: { background: b.swatch } }),
+                        String(count.get(b.id) ?? 0));
+                    add(node, () => filterColor === b.id);
+                    node.addEventListener('click', pick(() => {
+                        filterColor = filterColor === b.id ? null : b.id;
+                    }));
+                }
+            }
+        }
+        repaint();
+    }
 
     // ---------- power-ups ----------
     const puButtons = new Map<string, HTMLButtonElement>();
@@ -189,7 +273,8 @@ export async function gameScreen(host: HTMLElement, params: { id: string }): Pro
         // el slot se mide por la celda (no por la imagen, que trae los márgenes
         // de las orejas): así las fichas quedan juntas como en una bandeja real
         const slot = (trayVertical ? level.cellH : level.cellW) * trayScale + gap;
-        const loose = pieces.filter(p => !p.placed);
+        for (const p of pieces) p.hidden = !p.placed && !passesFilter(p);
+        const loose = pieces.filter(p => !p.placed && !p.hidden);
         trayContent = Math.max(0, loose.length * slot - gap);
         const along = trayVertical ? tray.h : tray.w;
         const start = Math.max(gap, (along - trayContent) / 2);
@@ -246,7 +331,7 @@ export async function gameScreen(host: HTMLElement, params: { id: string }): Pro
         // de adelante hacia atrás: la última dibujada es la de arriba
         for (let i = pieces.length - 1; i >= 0; i--) {
             const p = pieces[i];
-            if (p.placed) continue;
+            if (p.placed || p.hidden) continue;
             const w = level.pieceW * p.s, h = level.pieceH * p.s;
             if (x < p.x || y < p.y || x > p.x + w || y > p.y + h) continue;
             const mx = Math.floor(((x - p.x) / w) * p.mask.w);
@@ -573,7 +658,15 @@ export async function gameScreen(host: HTMLElement, params: { id: string }): Pro
                   tray.w - (trayVertical ? 4 : 8), tray.h - (trayVertical ? 8 : 0), m('radiusSmall'));
         g.fill();
         g.clip();
-        for (const p of pieces) if (!p.placed && p !== dragging) drawPiece(g, p, now);
+        for (const p of pieces) if (!p.placed && !p.hidden && p !== dragging) drawPiece(g, p, now);
+        if (!pieces.some(p => !p.placed && !p.hidden) && pieces.some(p => !p.placed)) {
+            g.fillStyle = cfg.colors.textDim;
+            g.font = `600 ${m('fontSmall')}px system-ui, sans-serif`;
+            g.textAlign = 'center';
+            g.textBaseline = 'middle';
+            g.fillText(t('filterEmpty'), tray.x + tray.w / 2, tray.y + tray.h / 2);
+            g.textAlign = 'start';
+        }
         g.restore();
 
         // fichas ya colocadas (dentro del recorte del tablero)
@@ -636,6 +729,7 @@ export async function gameScreen(host: HTMLElement, params: { id: string }): Pro
     };
 
     requestAnimationFrame(() => {
+        buildFilterBar();
         layout();
         refreshPowerUps();
         startTutorial();
