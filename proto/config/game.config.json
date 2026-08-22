@@ -50,6 +50,8 @@
     "levelNodeGap": 118,
     "levelPathAmplitude": 0.28,
     "levelPathWidth": 10,
+    "filterChipHeight": 34,
+    "filterGap": 6,
     "powerupSize": 60,
     "powerupGap": 12,
     "splashMinMs": 900,
@@ -74,6 +76,8 @@
     "time": "⏳",
     "restart": "↻",
     "zoomReset": "⤢",
+    "filterEdge": "▢",
+    "filterInner": "▪",
     "next": "»",
     "check": "✓",
     "logo": "🧩",
@@ -121,6 +125,10 @@
       "puTime": "+Tiempo",
       "puNone": "Sin usos",
       "timeAdded": "+{n}s",
+      "filterAll": "Todas",
+      "filterEdge": "Bordes",
+      "filterInner": "Interior",
+      "filterEmpty": "Ninguna ficha con ese filtro",
       "customLevels": "Niveles propios",
       "editorLink": "Editor de niveles",
       "earsLink": "Editor de orejas"
@@ -183,6 +191,27 @@
       "price": 40,
       "addSeconds": 30
     }
+  },
+
+  "filters": {
+    "enabled": true,
+    "shape": true,
+    "color": true,
+    "sampleSize": 24,
+    "neutralSaturation": 0.12,
+    "neutralWeight": 0.06,
+    "minPiecesPerColor": 2,
+    "colors": [
+      { "id": "rojo",     "label": "Rojo",     "swatch": "#e8523f", "from": 345, "to": 15 },
+      { "id": "naranja",  "label": "Naranja",  "swatch": "#f0913a", "from": 15,  "to": 45 },
+      { "id": "amarillo", "label": "Amarillo", "swatch": "#f2d24b", "from": 45,  "to": 70 },
+      { "id": "verde",    "label": "Verde",    "swatch": "#5ec46a", "from": 70,  "to": 160 },
+      { "id": "celeste",  "label": "Celeste",  "swatch": "#4ec9e0", "from": 160, "to": 200 },
+      { "id": "azul",     "label": "Azul",     "swatch": "#4a7fe0", "from": 200, "to": 255 },
+      { "id": "violeta",  "label": "Violeta",  "swatch": "#9a6ee0", "from": 255, "to": 290 },
+      { "id": "rosa",     "label": "Rosa",     "swatch": "#e86ba8", "from": 290, "to": 345 },
+      { "id": "neutro",   "label": "Neutro",   "swatch": "#b9c0dd", "neutral": true }
+    ]
   },
 
   "shop": {
